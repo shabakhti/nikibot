@@ -1,60 +1,35 @@
 <div align="center">
 
-# 🤖 Niki — your AI companion for Telegram
+# 🤖 Niki — AI Assistant for Telegram
 
-### A Persian-first, fully bilingual Gemini bot that runs **100% on Cloudflare Workers**
+**An English-first, multilingual AI assistant for Telegram, powered by Google Gemini and running entirely on Cloudflare Workers.**
+Chat · images · voice · quizzes · language tutoring · Mini App · admin panel · public API — in a single file, on the free tier.
 
-Chat · Photos · Voice · Image generation · Quizzes · Language & coding tutor · Mini App · Admin panel · Public API
-**— one file, your own account, free tier friendly.**
+![version](https://img.shields.io/badge/version-1.0-blue)
+![platform](https://img.shields.io/badge/platform-Cloudflare%20Workers-F38020)
+![ai](https://img.shields.io/badge/AI-Google%20Gemini-4285F4)
+![db](https://img.shields.io/badge/storage-D1%20%2B%20KV-orange)
+![ui](https://img.shields.io/badge/interface-English%20%7C%20Persian-green)
+![replies](https://img.shields.io/badge/replies-any%20language-green)
 
-<br>
+**🌐 Language: English · [فارسی](docs/README.md)**
 
-![version](https://img.shields.io/badge/version-0.5.0--beta-blue?style=for-the-badge)
-![platform](https://img.shields.io/badge/Cloudflare-Workers-F38020?style=for-the-badge&logo=cloudflare&logoColor=white)
-![ai](https://img.shields.io/badge/Google-Gemini-4285F4?style=for-the-badge&logo=googlegemini&logoColor=white)
-![telegram](https://img.shields.io/badge/Telegram-Bot%20%2B%20Mini%20App-26A5E4?style=for-the-badge&logo=telegram&logoColor=white)
-![langs](https://img.shields.io/badge/فارسی%20%7C%20English-green?style=for-the-badge)
-![license](https://img.shields.io/badge/license-Apache%202.0-D22128?style=for-the-badge)
-
-<br>
-
-[**🚀 One-click install**](https://wizard.nikibot.workers.dev/) &nbsp;·&nbsp;
-[🧰 Manual install](#-manual-installation) &nbsp;·&nbsp;
-[⌨️ Commands](#-bot-commands) &nbsp;·&nbsp;
-[🖥 Admin panel](#-admin-panel) &nbsp;·&nbsp;
-[📱 Mini App](#-telegram-mini-app) &nbsp;·&nbsp;
-[🔌 API](#-external-api)
+[**🚀 One-click install**](https://wizard.nikibot.workers.dev/) · [Manual install](#-manual-installation) · [Commands](#-bot-commands) · [Admin panel](#-admin-panel) · [Mini App](#-telegram-mini-app) · [API](#-external-api)
 
 </div>
 
-
-  💡 Tip: add screenshots here to make the page even more inviting, e.g.
   <p align="center"><img src="docs/setup.png" width="30%"> <img src="docs/miniapp.png" width="30%"> <img src="docs/config.png" width="30%"></p>
 
 
 ---
 
-## ⚡ Quick start (3 steps, ~1 minute)
-
-| | Step | |
-|:--:|---|---|
-| **1** | Create a bot with [@BotFather](https://t.me/BotFather) and get a free key from [Google AI Studio](https://aistudio.google.com/apikey). | 🔑 |
-| **2** | Open the **[installer](https://wizard.nikibot.workers.dev/)**, paste a Cloudflare token, press **Install**. | 🚀 |
-| **3** | Open your new `/admin` panel, add the bot token + Gemini key, **set a password**, say hi to your bot. | 🎉 |
-
-> No server. No Docker. No command line. Prefer the terminal? Use the [manual install](#-manual-installation) — same result.
-
----
-
 ## 📑 Table of contents
 
-<details>
-<summary><b>Click to expand</b></summary>
-
-1. [Why Niki?](#-why-niki)
+1. [What is Niki?](#-what-is-niki)
 2. [Features](#-features)
+   - [Language support](#-language-support)
 3. [Requirements](#-requirements)
-4. [Installation — the easy way](#-installation--the-easy-way-recommended)
+4. [Installation — the easy way (recommended)](#-installation--the-easy-way-recommended)
 5. [Manual installation](#-manual-installation)
 6. [First-time setup](#-first-time-setup)
 7. [How it works](#-how-it-works)
@@ -69,91 +44,76 @@ Chat · Photos · Voice · Image generation · Quizzes · Language & coding tuto
 16. [FAQ](#-faq)
 17. [Contributing & license](#-contributing--license)
 
-</details>
-
 ---
 
-## 💖 Why Niki?
+## ✨ What is Niki?
 
-Niki (نیکی) is a friendly assistant that lives in your Telegram chats. She answers in the language you write in (Persian first, English fully supported), understands photos and voice notes, draws pictures, speaks, teaches, and hosts quizzes — in private chats and in groups.
+Niki is a friendly AI companion for Telegram. Talk to her in a private chat or add her to a group; she replies in **whatever language you write in** (English by default), remembers context, understands photos and voice messages, draws pictures, speaks, teaches English and other languages as well as programming, and hosts quizzes.
 
-|  | Niki | A typical hosted bot |
-|---|---|---|
-| 🏠 **You own it** | Runs on **your** Cloudflare account | Runs on someone else's server |
-| 💸 **Cost** | Free tier is enough for a small deployment | Subscription or ads |
-| 🔐 **Privacy** | No chat viewer, no message search, logs never contain text | Often unknown |
-| 🧩 **Everything included** | Bot + admin panel + Mini App + API in one file | Bot only |
-| 🇮🇷 **Persian first** | Bilingual panel, texts and prompts | Usually English only |
+Everything ships in **English by default** — the bot's messages, the admin panel, the Mini App and the installer. A complete **Persian (فارسی)** translation is built in as a one-click alternative; see [Language support](#-language-support). 📖 **[خواندن این مستندات به فارسی ← README.fa.md](README.fa.md)**
+
+Everything — the webhook, the admin dashboard, the Mini App front-end, the public API and the data layer — lives in **one JavaScript file** that you deploy to your **own Cloudflare account**. There is no server to maintain and nothing to pay for on the free tier of a small deployment.
 
 ---
 
 ## 🧩 Features
 
-<table>
-<tr>
-<td width="50%" valign="top">
-
 ### 💬 Conversation
-- **Gemini-powered** chat with automatic rotation across up to **10 API keys**
-- **Five modes** (`/mode 1–5`): Friendly · Analytical · Custom prompt · English tutor · Programming
-- **Short-term memory** per chat + **long-term memory** (archive and durable per-user facts)
-- Optional **web search**, configurable per chat
-- Understands **photos, voice notes and replies**
-- Natural **emoji reactions**; group-aware (replies when called by name, or to everything with `/alwayson`)
-
-</td>
-<td width="50%" valign="top">
+- **Gemini-powered chat** with automatic rotation across up to 10 API keys to spread quota.
+- **Five personas** (`/mode 1–5`): Normal, Analytical, Custom prompt, English tutor, Programming.
+- **Short-term memory** per chat, plus **long-term memory** (searchable archive and durable per-user facts the bot can save).
+- **Live web search** (Google Search grounding): say *"search …"* or ask for the latest news, weather, prices or scores. On by default with daily limits per user and group; switch it on/off globally (*Config → Global features*) or per chat (*Features → Per-chat features*). Importance scoring is configurable per chat too.
+- Understands **images, voice messages and replies** to earlier messages.
+- Natural **emoji reactions** and group-aware behaviour (replies when called by name, or to everything with `/alwayson`).
 
 ### 🎨 Media
-- **Image generation** (Flux-1-schnell on Workers AI), up to 4 images per request
-- **Voice replies** (text-to-speech) with selectable engine and voices
-- **Speech-to-text** (Whisper on Workers AI) for voice notes
-- **Voice-call mode** inside the Mini App
-
-</td>
-</tr>
-<tr>
-<td valign="top">
+- **Image generation** (Flux-1-schnell through Workers AI), up to 4 images per request.
+- **Voice replies** (text-to-speech) with selectable engine and voices.
+- **Speech-to-text** (Whisper on Workers AI) for voice messages.
 
 ### 🎓 Learning & fun
-- **Language tutor** and **programming tutor** with step-by-step sessions
-- **Spaced-repetition** vocabulary cards
-- **Shareable quizzes**, stats, leaderboards and certificates
-
-</td>
-<td valign="top">
+- **Language tutor** and **programming tutor** with step-by-step sessions, practice and **spaced-repetition** vocabulary review.
+- **Quizzes** you can share with friends, vocabulary cards, stats and leaderboards, certificates.
+- **Voice call mode** inside the Mini App.
 
 ### 👥 Groups & community
-- Group activation with admin approval
-- Roles: **User → Admin → Leader → Super admin**
-- Moderation: mute, ban, purge, pin, lockdown
-- **Invite links** with referral rewards
+- Group activation flow with admin approval.
+- Role hierarchy: **User → Admin → Leader → Super admin**.
+- Moderation: mute, ban, purge, pin, lockdown.
+- **Invite links** with referral rewards.
 
-</td>
-</tr>
-<tr>
-<td valign="top">
-
-### 💳 Limits & monetisation
-- Per-user and per-group **daily and total limits** (messages, images, voice)
-- **Packages** (time-limited bundles) — sell with **Telegram Stars** or gift manually
-- Daily caps, maintenance mode, welcome messages
-
-</td>
-<td valign="top">
+### 💳 Monetisation & limits
+- Per-user and per-group **daily and total limits** (messages, images, voice).
+- **Packages** (time-limited bundles) you can sell with **Telegram Stars** or gift manually.
+- Daily caps per chat, maintenance mode, welcome messages.
 
 ### 🛠 Administration
-- Bilingual **web admin panel** with a built-in guide
-- **Resumable broadcast engine** (pause / resume / cancel)
-- **Public REST API** (`/api/chat`, `/api/tts`, `/api/stt`) with per-key limits, expiry and CORS control
-- Gemini key manager, logs, feature switches
-
-</td>
-</tr>
-</table>
+- A full **web admin panel** (bilingual FA/EN) with built-in guide: groups, users, broadcasts, API keys, Gemini keys, packages, config, features, logs.
+- **Resumable broadcast engine** (queued missions, pause / resume / cancel).
+- **Public REST API** (`/api/chat`, `/api/tts`, `/api/stt`) with per-key limits, expiry and CORS control.
 
 ### 🔐 Privacy by design
-**No chat viewer. No message search. No export.** Logs contain events, never message text. Users can wipe their own memory at any time.
+- **No chat viewer, no message search** anywhere in the admin panel or in bot commands.
+- Logs contain events, never message text.
+- Users can wipe their own memory at any time.
+
+---
+
+## 🌍 Language support
+
+Niki is built for an international audience: **English is the default language everywhere**, and Persian is a fully supported second language.
+
+| Part | Default | Also available |
+|---|---|---|
+| AI replies | **Auto** — same language the user writes in (English if unclear) | Always English, or always Persian — chosen in Setup or *Config → Reply language* |
+| Bot's fixed messages (help, limits, errors) | English | Persian — `/lang fa` |
+| Admin panel & built-in guide | English | Persian — 🌐 button |
+| Mini App | English | Persian (automatic when the user's Telegram language is Persian) |
+| One-click installer | English (`/`) | Persian (`/fa`) |
+
+- Set the default language for the whole bot in the admin panel; each chat can override it with `/lang en` or `/lang fa`.
+- The **persona prompts** (how Niki introduces herself and behaves) are plain text under *Admin → Config → Default prompts*. Edit them to give the bot your own name, personality and tone.
+- Adding another interface language means translating the dictionaries in the source (`I18N` for bot messages, plus the panel and Mini App strings). Contributions are welcome.
 
 ---
 
@@ -161,11 +121,11 @@ Niki (نیکی) is a friendly assistant that lives in your Telegram chats. She a
 
 | What | Notes |
 |---|---|
-| ☁️ **Cloudflare account** | The free plan is enough to start. |
-| 🤖 **Telegram bot token** | Create one with [@BotFather](https://t.me/BotFather). |
-| 🧬 **Gemini API key** | Free key from [aistudio.google.com/apikey](https://aistudio.google.com/apikey). Add more keys later to spread quota. |
-| 🆔 **Your Telegram numeric ID** | Optional — makes you a *super admin*. Get it from any ID bot, e.g. `@userinfobot`. |
-| 💻 **Node.js 18+ and `wrangler`** | Only for the [manual installation](#-manual-installation). |
+| **Cloudflare account** | Free plan is enough to start. |
+| **Telegram bot token** | Create a bot with [@BotFather](https://t.me/BotFather). |
+| **Gemini API key** | Free key from [aistudio.google.com/apikey](https://aistudio.google.com/apikey). Add more keys later to spread quota. |
+| **Your Telegram numeric ID** | Optional, used to become a *super admin*. Get it from any "ID bot", e.g. `@userinfobot`. |
+| Node.js 18+ and `wrangler` | Only for the [manual installation](#-manual-installation). |
 
 ---
 
@@ -178,43 +138,44 @@ The installer deploys Niki to **your own** Cloudflare account in about a minute 
 ### Step by step
 
 1. **Open the installer** — <https://wizard.nikibot.workers.dev/> (English) or <https://wizard.nikibot.workers.dev/fa> (فارسی).
-2. **Create a Cloudflare API token.** Click **Create a token** on the installer page; it pre-selects only the permissions needed:
-   - Workers Scripts — **Edit**
-   - Workers KV Storage — **Edit**
-   - D1 — **Edit**
-   - Account Settings — **Read**
+2. **Create a Cloudflare API token.** Click **Create a token** on the installer page. The link pre-selects only the permissions required:
+   - Workers Scripts — Edit
+   - Workers KV Storage — Edit
+   - D1 — Edit
+   - Account Settings — Read
 
-   Press **Continue to summary → Create Token** and **copy the token**.
-3. **Paste the token**, optionally choose a project name, and press **Install**.
-4. The installer then creates, on your account:
-   - a **D1 database** (`NIKI_DB`) and a **KV namespace** (`NIKI_KV`),
-   - the **Workers AI** binding (`AI`),
-   - the bot code, with the `workers.dev` URL enabled,
-   - a **1-minute cron trigger** (broadcasts and scheduled jobs).
+   Then press **Continue to summary → Create Token** and **copy the token**.
+3. **Paste the token** into the installer, optionally choose a project name, and press **Install**.
+4. The installer will, on your account:
+   - create a **D1 database** (`NIKI_DB`) and a **KV namespace** (`NIKI_KV`),
+   - enable the **Workers AI** binding (`AI`),
+   - upload the bot code,
+   - enable the `workers.dev` URL,
+   - add a **1-minute cron trigger** (used for broadcasts and scheduled jobs).
 5. When it finishes you get two links:
-   - 🌐 **Service URL** — `https://<name>.<your-subdomain>.workers.dev`
-   - 🖥 **Admin panel** — `https://<name>.<your-subdomain>.workers.dev/admin` *(keep it private!)*
-6. 🧹 **Delete the API token** in your Cloudflare dashboard — it is no longer needed.
+   - **Service URL** — `https://<name>.<your-subdomain>.workers.dev`
+   - **Admin panel** — `https://<name>.<your-subdomain>.workers.dev/admin` (keep it private!)
+6. **You can now delete the API token** in your Cloudflare dashboard — it is no longer needed.
 7. Continue with [First-time setup](#-first-time-setup).
 
-> 🔒 **Is my token safe?** The token is used only during the install request to talk to the Cloudflare API; it is not stored and not logged. If you would rather not give a token to any third-party page, use the [manual installation](#-manual-installation) — about 10 minutes, identical result.
+> 🔒 **Is my token safe?** The token is used only during the install request to talk to the Cloudflare API. It is not stored and not logged. If you prefer not to trust any third-party page with a token, use the [manual installation](#-manual-installation) instead — it takes ~10 minutes and the result is identical.
 
-> ⚠️ **The panel has no password on first launch.** Open it right after installing and set one (see below). Until you do, anyone who knows your Worker URL could open it.
+> ⚠️ **The panel has no password on first launch.** Open it right after installing and set a password (see below). Until you do, anyone who knows your Worker URL could open the panel.
 
 ### Updating with the installer
-Run the installer again with the **same project name**. Your D1 data, KV data and secrets are kept; only the code is replaced.
+Run the installer again with the **same project name**. Your D1 database, KV data and secrets are kept; only the code is replaced.
 
 ---
 
 ## 🧰 Manual installation
 
-Want full control, or deploying from the command line / CI? Follow these steps.
+Prefer full control, or want to deploy from the command line / CI? Follow these steps.
 
 ### 1. Get the code
 ```bash
-git clone https://github.com/Shabakhti/niki-bot.git
+git clone https://github.com/YOUR_USERNAME/niki-bot.git
 cd niki-bot
-npm install -g wrangler        # or use: npx wrangler ...
+npm install -g wrangler        # or: npx wrangler ...
 wrangler login
 ```
 
@@ -232,7 +193,7 @@ wrangler kv namespace create NIKI_KV
 ### 3. Create `wrangler.toml`
 ```toml
 name = "niki-bot"
-main = "worker.js"
+main = "bot.js"
 compatibility_date = "2025-01-01"
 
 # Workers AI (image generation, speech-to-text)
@@ -248,7 +209,7 @@ database_id = "PASTE_D1_DATABASE_ID"
 binding = "NIKI_KV"
 id = "PASTE_KV_NAMESPACE_ID"
 
-# Cron heartbeat — broadcasts, scheduled jobs (every minute)
+# Cron heartbeat — broadcasts, scheduled jobs (runs every minute)
 [triggers]
 crons = ["* * * * *"]
 
@@ -258,7 +219,7 @@ SUPER_ADMIN_IDS = "123456789"
 ```
 
 > ℹ️ Binding names **must** be exactly `NIKI_DB`, `NIKI_KV` and `AI`.
-> The database schema is created automatically on the first request — nothing to migrate by hand.
+> The database schema is created automatically on the first request — there is nothing to migrate by hand.
 
 ### 4. Add secrets
 ```bash
@@ -293,7 +254,7 @@ curl "https://api.telegram.org/bot<TELEGRAM_BOT_TOKEN>/setWebhook" \
 ```bash
 curl "https://api.telegram.org/bot<TELEGRAM_BOT_TOKEN>/getWebhookInfo"
 ```
-`url` should be your Worker URL and `last_error_message` should be empty. Now send `/start` to your bot. ✅
+`url` should be your Worker URL and `last_error_message` should be empty. Send `/start` to your bot.
 
 ---
 
@@ -302,49 +263,37 @@ curl "https://api.telegram.org/bot<TELEGRAM_BOT_TOKEN>/getWebhookInfo"
 Open the **admin panel** at `https://<your-worker-url>/admin`.
 
 1. **Finish the setup bar** at the top (it lists whatever is still missing):
-   - 🤖 **Telegram bot token** and **bot username**
+   - 🤖 **Telegram bot token** (the bot username is detected automatically)
+   - 🌍 **Bot language** — *Auto* (default), *English* or *Persian*: the language the AI speaks. The system prompt adapts to it. Change it later in *Config → Reply language*.
    - 🧬 **Gemini API key**
    - 🔐 **Panel password** — *set this immediately.*
-
    The setup card also registers the Telegram webhook for you.
 2. **Add yourself as a super admin:** *Config → Super admins* → add your numeric Telegram ID (or use the `SUPER_ADMIN_IDS` variable).
-3. **Set limits:** *Config → New-user limits / Group limits* — how many messages, images and voice notes users get.
-4. *(Optional)* Customise the **default prompts**, bot name, welcome texts and voice engine.
-5. Open the **📖 Guide** tab — a complete bilingual manual of every panel section, with your Mini App link ready to copy.
-6. **Test it:** message your bot, then add it to a group and run `/init`.
+3. **Set limits:** *Config → New-user limits / Group limits* — decide how many messages, images and voice notes users get.
+4. *(Optional)* Edit the default **personas/prompts**, **bot name**, welcome texts and voice engine.
+5. Open the **📖 Guide** tab — a complete, bilingual manual of every panel section, with your Mini App link ready to copy.
+6. **Test it:** message your bot, then add it to a group and run `/init` (see below).
 
-### 👥 Activating a group
+### Activating a group
 1. Add the bot to a group.
-2. The group owner/creator sends **`/init`**. The request appears under **Overview → Requests** (super admins are also notified in private chat).
-3. A super admin presses **Approve** — Niki now answers in that group.
+2. The group owner/creator sends **`/init`**. The request appears under **Overview → Requests** (and super admins are notified in private chat).
+3. A super admin presses **Approve**. The bot now answers in that group.
 
 Until a group is approved, the bot only responds to the activation flow.
 
-### 🎭 Customising Niki's personality
-Modes **1** and **2** ship with neutral, general-purpose default prompts. Make Niki yours without touching the code:
-
-- **Whole bot:** *Admin → Config → Default prompts* — set a private and a group prompt for Mode 1 and Mode 2. Leave a field blank to use the built-in default.
-- **One chat:** use the custom-prompt flow (`/mode 3`) or the Mini App's *Personalisation* section.
-- **In the code:** edit the plain-text `PUBLIC_PROMPT_TEXT` object in section *§ 10 System prompt*.
-
 ---
 
-## 🔍 How it works
+## ⚙️ How it works
 
-```mermaid
-flowchart LR
-    T([📱 Telegram]) -->|webhook| W{{☁️ Cloudflare Worker<br/>worker.js}}
-    M([📲 Mini App]) --> W
-    A([🔌 Your app / site]) -->|REST API| W
-    P([🖥 Admin panel]) --> W
-    W --> G[🧬 Google Gemini<br/>chat · vision · TTS]
-    W --> AI[🎨 Workers AI<br/>Flux images · Whisper STT]
-    W --> D[(🗄 D1<br/>users · groups · limits · memory · logs)]
-    W --> K[(⚡ KV<br/>cache · sessions · rate limits)]
-    C([⏱ Cron — every minute]) --> W
+```
+Telegram ──► Cloudflare Worker (this file) ──► Google Gemini (chat, vision, TTS)
+                 │   │   │                └──► Workers AI (Flux images, Whisper STT)
+                 │   │   └── KV  (caches, sessions, rate limits, dedup)
+                 │   └────── D1  (users, groups, limits, memory, packages, logs)
+                 └────────── Cron (every minute: broadcasts & scheduled jobs)
 ```
 
-- **Webhook** — Telegram POSTs updates to `/`. If `TELEGRAM_WEBHOOK_SECRET` is set, the `X-Telegram-Bot-Api-Secret-Token` header is verified, and updates are de-duplicated by `update_id`.
+- **Webhook** — Telegram POSTs updates to `/`. If `TELEGRAM_WEBHOOK_SECRET` is set the `X-Telegram-Bot-Api-Secret-Token` header is verified, and updates are de-duplicated by `update_id`.
 - **Routes**
 
   | Route | Purpose |
@@ -354,19 +303,18 @@ flowchart LR
   | `/app` | Telegram Mini App |
   | `/api/chat` · `/api/tts` · `/api/stt` | Public REST API |
 
-- **Key rotation** — Gemini keys are used in rotation, so one exhausted key never stops the bot.
-- **Permissions** — `USER (0) < ADMIN (1) < LEADER (2) < SUPER (3)`. Super admins are defined by numeric ID only.
+- **Key rotation** — Gemini keys are used in rotation so one exhausted key doesn't stop the bot.
+- **Permissions** — `USER (0) < ADMIN (1) < LEADER (2) < SUPER (3)`. Super admins are defined only by numeric ID.
 - **Limits** — daily and total pools for messages / images / voice, per user and per group; packages and invite rewards add to them.
 
 ---
 
-## 📜 Bot commands
+## ⌨️ Bot commands
 
-Commands work in private chats and groups unless noted. `<angle brackets>` = required, `[square]` = optional.
+Commands work in private chats and groups unless noted. Arguments in `<angle brackets>` are required, `[square]` optional.
 In a **private chat** you are the admin of your own conversation, so memory and persona commands are available to you.
 
-<details open>
-<summary><b>👤 Everyone</b></summary>
+### 👤 Everyone
 
 | Command | Description |
 |---|---|
@@ -384,26 +332,18 @@ In a **private chat** you are the admin of your own conversation, so memory and 
 | `/myfriends` · `/friends` | List the friends you invited. |
 | `/packages` | View / buy available packages. |
 
-</details>
-
-<details>
-<summary><b>🧠 Persona & memory</b> (private chat, or group admins)</summary>
+### 🧠 Persona & memory (private chat, or group admins)
 
 | Command | Description |
 |---|---|
-| `/mode 1\|2\|3\|4\|5` | Switch persona: **1** Friendly · **2** Analytical · **3** Custom prompt · **4** English tutor · **5** Programming. `/mode` alone opens a picker. |
+| `/mode 1\|2\|3\|4\|5` | Switch persona: **1** Normal · **2** Analytical · **3** Custom prompt · **4** English tutor · **5** Programming. `/mode` alone opens a picker. |
 | `/reset` | Clear this chat's short-term memory. |
 | `/memstats` | Long-term memory statistics. |
 | `/memclear` | Clear long-term memory. |
 | `/alwayson` | Toggle "reply to every message". |
 | `/histclear` | Clear this chat's history and archive. |
-| `/logclear` | Clear this chat's long-term log. |
-| `/logremove <n>` | Remove entry number `n` from the long-term log. |
 
-</details>
-
-<details>
-<summary><b>🛡 Group admins</b></summary>
+### 🛡 Group admins
 
 | Command | Description |
 |---|---|
@@ -417,13 +357,9 @@ In a **private chat** you are the admin of your own conversation, so memory and 
 | `/pin` · `/unpin` · `/unpinall` | Pin / unpin messages. |
 | `/mute @user` · `/unmute @user` | Mute / unmute a member. |
 | `/ban @user` · `/unban @user` | Ban / unban a member. |
-| `/log [admin\|error\|warn\|info]` | Recent system log of this chat (events only, no message text). |
 | `/admins` | Show leader and admins. |
 
-</details>
-
-<details>
-<summary><b>👑 Group leader</b></summary>
+### 👑 Group leader
 
 | Command | Description |
 |---|---|
@@ -433,22 +369,19 @@ In a **private chat** you are the admin of your own conversation, so memory and 
 
 > Super admins cannot be muted, banned or demoted by group staff.
 
-</details>
-
-<details>
-<summary><b>🔧 Super admins only</b></summary>
+### 🔧 Super admins only
 
 | Command | Description |
 |---|---|
 | `/debug` | Runtime / state snapshot. |
 | `/testai` | Test all Gemini keys. |
 | `/testimage` | Test the image pipeline. |
-
-</details>
+| `/log [admin\|error\|warn\|info]` | Recent system log of the chat (events only, no message text). |
+| `/logclear` · `/logremove <n>` | Clear the log / remove one entry. |
 
 ### 💡 Talking to Niki in groups
-- Without `/alwayson`, include **Niki** (or **نیکی**) in your message — or reply to one of her messages.
-- With `/alwayson`, she answers everything.
+- Without `/alwayson`, include **Niki** in your message — or reply to one of her messages. (The bot's name can be changed in *Config → Bot name*.)
+- With `/alwayson` she answers everything.
 - She can react with emoji, and group admins can ask her in plain language to pin, unpin or delete messages.
 
 ---
@@ -467,11 +400,11 @@ Open `https://<your-worker-url>/admin`. Use the **🌐 FA/EN** button to switch 
 | 🧬 **Gemini keys** | Add / import / export / disable Gemini keys. |
 | 📦 **Packages** | Create package templates, activate them on any chat, see active packages and **Telegram Stars** purchase history. |
 | ⚙️ **Config** | Default limits, prompts (group / private / API), start & invite rewards, voice engine, default AI model, bot name & username, bot token override, **super admins**, **panel password**, clear-history tools. |
-| 🧠 **Features** | Switch capabilities on/off for the Mini App, private chats and groups; daily caps; welcome texts; **maintenance mode**; per-chat overrides. |
+| 🧠 **Features** | Switch capabilities on/off for the Mini App, private chats and groups; daily caps; welcome texts; **maintenance mode**; per-chat feature overrides. |
 | 📋 **Log** | System events by level (admin / warn / error / info). |
 | 📖 **Guide** | Complete bilingual manual, quick start, command cheat-sheet and the Mini App link. |
 
-**Panel security:** once you set a password the panel requires login (6-hour session, secure cookie). The optional `ADMIN_PANEL_PASSWORD` Worker secret works as an emergency recovery password if you ever forget yours.
+**Security of the panel:** after you set a password the panel requires login (6-hour session, secure cookie). The optional `ADMIN_PANEL_PASSWORD` Worker secret works as an emergency recovery password if you ever forget it.
 
 ---
 
@@ -484,8 +417,9 @@ A ChatGPT-style graphical app that opens **inside Telegram** at `/app`.
 - share the link `https://t.me/<your_bot_username>?start=app` (shown in *Admin → 📖 Guide → Mini App*).
 
 **Optional BotFather setup** (adds a permanent menu button):
-`@BotFather → /mybots → your bot → Bot Settings → Menu Button → Configure menu button`, then use `https://<your-worker-url>/app` as the URL.
-For a direct link like `t.me/<bot>/<app>`, use `/newapp` with the same URL.
+`@BotFather → /mybots → your bot → Bot Settings → Menu Button → Configure menu button` and use
+`https://<your-worker-url>/app` as the URL.
+For a direct link like `t.me/<bot>/<app>` use `/newapp` with the same URL.
 
 **Sections** (each can be switched on/off in *Admin → Features → Mini App*)
 
@@ -501,9 +435,9 @@ For a direct link like `t.me/<bot>/<app>`, use `/newapp` with the same URL.
 | 🎭 | Personalisation (name & prompt) |
 | 🏅 | Learning certificates |
 | 🖼️ | Image generation |
-| ✏️ | Rename & delete chats |
+| 🗂️ | Rename & delete chats |
 
-> The Mini App only works inside Telegram — requests are authenticated with Telegram's signed `initData`, verified on the server. Telegram only allows the `web_app` button in **private chats**; in groups, share the link instead.
+> The Mini App only works inside Telegram — requests are authenticated with Telegram's signed `initData`, verified on the server. Telegram only allows the `web_app` button in **private chats**; in groups share the link instead.
 
 ---
 
@@ -555,14 +489,14 @@ The complete reference (all fields, examples in several languages) is in the pan
 
 | Name | Required | Description |
 |---|:--:|---|
-| `TELEGRAM_BOT_TOKEN` | ✅* | Bot token. *May instead be entered in the admin panel (the panel value takes priority).* |
+| `TELEGRAM_BOT_TOKEN` | ✅* | Bot token. *May instead be entered in the admin panel (panel value takes priority).* |
 | `GEMINI_API_KEY_1` … `_10` | ✅* | Gemini keys. *May instead be added in the panel's 🧬 Gemini keys tab.* |
 | `SUPER_ADMIN_IDS` | ➖ | Comma-separated numeric Telegram IDs of super admins. IDs can also be added in *Config → Super admins*. |
-| `TELEGRAM_WEBHOOK_SECRET` | ➖ | Random string; enables webhook header verification (**recommended**). |
+| `TELEGRAM_WEBHOOK_SECRET` | ➖ | Random string; enables webhook header verification (recommended). |
 | `ADMIN_PANEL_PASSWORD` | ➖ | Emergency recovery password for the admin panel. |
 
 ### Cron
-A `* * * * *` trigger is recommended. It drives broadcast missions and scheduled maintenance. Broadcasts also advance opportunistically on incoming traffic, but the cron keeps them on time.
+A `* * * * *` trigger is recommended. It drives broadcast missions and scheduled maintenance. Broadcasts also advance opportunistically on incoming traffic, but the cron makes them on-time.
 
 ### Runtime-configurable (admin panel)
 Default and per-chat limits · prompts per chat type · default AI model · voice engine and voices · bot name · welcome texts · feature switches per chat type · daily caps · maintenance mode · invite and start rewards · packages and prices.
@@ -572,21 +506,19 @@ Default and per-chat limits · prompts per chat type · default AI model · voic
 ## 🔐 Privacy & security
 
 **Message privacy**
-- The admin panel and bot commands have **no way to read or search users' conversations** — no conversation viewer, no archive search, no export.
+- The admin panel and the bot commands have **no way to read or search users' conversations**. There is no conversation viewer, no archive search and no export.
 - System logs record events (for example "group approved"), never message text.
 - Users can erase their own context with `/reset`, `/memclear` and `/histclear`; admins can wipe stored history from *Config → Clear history*.
-- Conversation context is still stored in your D1 database because the bot needs it to remember. Anyone with access to your Cloudflare account can technically read that database — **you are the data controller**, so tell your users what you store.
+- Conversation context is still stored in your D1 database because the bot needs it to remember. Anyone with access to your Cloudflare account can technically read that database — **you are the data controller**; tell your users what you store.
 - Messages are sent to Google Gemini to generate replies, so Google's terms apply to that content.
 
-**Operational security checklist**
-- [ ] Set an **admin panel password** right after the first launch.
-- [ ] Set `TELEGRAM_WEBHOOK_SECRET` so only Telegram can call the webhook.
-- [ ] Identify super admins by **numeric ID only** (usernames can change or be spoofed).
-- [ ] Keep tokens and API keys in Cloudflare **Secrets** — never commit them.
-- [ ] Use one API key per app, with limits and an expiry; delete a key the moment it leaks.
-- [ ] Delete the installer's Cloudflare API token once installation is done.
-
-The Mini App verifies Telegram's signed `initData` on the server; client claims are never trusted.
+**Operational security**
+- Set an **admin panel password** immediately after the first launch.
+- Super admins are identified by **numeric ID only** (usernames can be changed or spoofed).
+- Set `TELEGRAM_WEBHOOK_SECRET` so that only Telegram can call the webhook.
+- Keep tokens and API keys in Cloudflare **Secrets**; never commit them.
+- Use one API key per app, with limits and an expiry; delete a key the moment it leaks.
+- The Mini App verifies Telegram's signed `initData` server-side; it cannot be trusted to client claims.
 
 ---
 
@@ -602,58 +534,42 @@ The Mini App verifies Telegram's signed `initData` on the server; client claims 
 
 | Problem | Fix |
 |---|---|
-| Bot doesn't answer at all | Check `getWebhookInfo` (`url`, `last_error_message`). Re-run the panel's setup card, or call `setWebhook` again. Make sure the bot token is valid. |
+| Bot doesn't answer at all | Check `getWebhookInfo` (`url`, `last_error_message`). Re-run the panel's setup card, or `setWebhook` again. Make sure the bot token is valid. |
 | `401/403` on the webhook | The secret in Telegram's `setWebhook` and `TELEGRAM_WEBHOOK_SECRET` must match — or remove the secret from the Worker. |
 | Bot silent in a group | The group isn't approved yet (*Overview → Requests*), or it is in `/silent` mode. Mention **Niki** or use `/alwayson`. |
 | "AI request failed" / no model keys | A Gemini key is exhausted or invalid. Add keys in *🧬 Gemini keys*. |
-| Image generation fails | Check that the `AI` binding exists and Workers AI is available on your account. |
-| Mini App link is empty | Enter the bot username in *Config → Bot username*. |
+| Image generation fails | Check the `AI` binding exists and Workers AI is available on your account. |
+| Mini App link is empty | Re-run the setup card so the bot username is detected, or enter it in *Config → Bot username*. |
 | Mini App is blank | Make sure the Mini App switch is on (*Features → Mini App*) and open it from Telegram, not a normal browser. |
-| Broadcast is stuck | The mission may be paused — use *Resume* or *Run now*. Check that the cron trigger exists. |
+| Broadcast stuck | Mission may be paused; use *Resume* or *Run now*. Check the cron trigger exists. |
 | Forgot the panel password | Create the `ADMIN_PANEL_PASSWORD` secret, sign in with it, then set a new password in *Config*. |
-| Installer says the token lacks permission | Create the token with the installer's **Create a token** link so the right permissions are pre-selected. |
+| Installer says token lacks permission | Create the token with the installer's **Create a token** link so the right permissions are pre-selected. |
 
 ---
 
 ## ❓ FAQ
 
-<details>
-<summary><b>Does it cost anything?</b></summary>
-A small deployment fits Cloudflare's free tier, and Gemini offers a free tier too. Heavy usage may need paid plans on either side.
-</details>
+**Does it cost anything?** A small deployment fits Cloudflare's free tier. Gemini offers a free tier too. Heavy usage may need paid plans on either side.
 
-<details>
-<summary><b>Can I use it only in English?</b></summary>
-Yes — set the language per chat with <code>/lang en</code>; the AI answers in whatever language the user writes.
-</details>
+**Is it only for Persian speakers?** No — it's English-first. Everything defaults to English, and Persian is an optional translation. The AI answers in whatever language the user writes.
 
-<details>
-<summary><b>Can I change Niki's personality?</b></summary>
-Yes. Set your own prompts in <i>Admin → Config → Default prompts</i>, per chat with <code>/mode 3</code>, or edit <code>PUBLIC_PROMPT_TEXT</code> in the code. See <a href="#-customising-nikis-personality">Customising Niki's personality</a>.
-</details>
+**Can I change the language?** Yes — use `/lang en` or `/lang fa` per chat, or set the global default in the admin panel.
 
-<details>
-<summary><b>Can I run several bots?</b></summary>
-Yes. Deploy once per bot (each gets its own D1/KV), e.g. by running the installer with different project names.
-</details>
+**Can I rename the bot or change its personality?** Yes — set a name in *Config → Bot name* and edit the prompts in *Config → Default prompts*.
 
-<details>
-<summary><b>Can I sell access?</b></summary>
-Yes — create <b>Packages</b> and enable Telegram Stars purchases, or gift quota to users from the panel.
-</details>
+**Can I run several bots?** Yes. Deploy once per bot (each gets its own D1/KV), e.g. by running the installer with different project names.
 
-<details>
-<summary><b>Is the code open?</b></summary>
-Yes. The bot is a single, readable JavaScript module; sections are marked <code>§ N</code> with a table of contents at the top of the file.
-</details>
+**Can I sell access?** Yes — create **Packages** and enable Telegram Stars purchases, or gift quota to users from the panel.
+
+**Is the code open?** The bot is a single, readable JavaScript module; sections are marked `§ N` with a table of contents at the top of the file.
 
 ---
 
 ## 🤝 Contributing & license
 
-Issues and pull requests are welcome — please open an issue first for larger changes. When submitting code, keep the single-file layout (section markers `§ N`) and **never add features that expose users' message content**.
+Issues and pull requests are welcome. Please open an issue first for larger changes. When submitting code, keep the single-file layout (section markers `§ N`) and **never add features that expose users' message content**.
 
-**License:** [Apache License 2.0](LICENSE) — free to use, modify and distribute (including commercially), as long as you keep the license and copyright notice and state significant changes. It also includes an express patent grant. Contributions you submit are licensed under the same terms.
+**License:** add your preferred license here (for example MIT) as a `LICENSE` file.
 
 ---
 

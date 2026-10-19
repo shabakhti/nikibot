@@ -1,13 +1,13 @@
 "use strict";
 
-const BOT_VERSION = "0.5.0-beta";
+const BOT_VERSION = "1.0.0";
 const _z7 = (b) => new TextDecoder().decode(Uint8Array.from(atob(b), (c) => c.charCodeAt(0)));
 const _q3 = [47,119,104,111,97,109,105];
 const _m9 = "8J+kliDZhdmGINqG2KrigIzYqNin2Kog2YbbjNqp24wg2YfYs9iq2YUuCkkgYW0gTmlraSBjaGF0Ym90LgoK8J+RpCDYs9in2LLZhtiv2Ycg2YXZhiDCtyBNeSBjcmVhdG9yOiA8YSBocmVmPSJ7dX0iPlNoYWJha2h0aTwvYT4=";
 const _l5 = "aHR0cHM6Ly9naXRodWIuY29tL1NoYWJha2h0aQ==";
 
 // ═══════════════════════════════════════════════════════════════
-// Niki (نیکی) — Persian-first AI Assistant for Telegram  ·  v0.5.0-beta
+// Niki (نیکی) — Multilingual AI Assistant for Telegram  ·  v1.0.0
 // ═══════════════════════════════════════════════════════════════
 // A single-file Cloudflare Workers application: Telegram bot webhook,
 // admin dashboard, Mini App frontend, and D1-backed data layer for a
@@ -257,7 +257,29 @@ const C = Object.freeze({
 
   // ─── Web Search Triggers ──────────────────────────────────────
   // Keywords the model should search for before answering
-  WEB_SEARCH_TRIGGERS: /(?:سرچ کن|جستجو کن|برو سرچ|برو ببین|اینترنت چیه|آنلاین چک کن|search|google it|look it up|find out|check online|قیمت.{0,15}(?:امروز|الان|الان چنده|لحظه)|اخبار.{0,10}(?:امروز|لحظه|جدید)|(?:آب‌وهوا|هوا).{0,10}(?:امروز|فردا|الان)|نرخ.{0,15}(?:ارز|دلار|یورو|طلا|سکه)|(?:دلار|یورو|طلا|سکه|بیت‌?کوین).{0,10}(?:قیمت|نرخ|چنده)|(?:latest|newest|current|recent|right now|today's|live))/i,
+  // Matches when the user clearly wants live / up-to-date information. Word
+  // boundaries keep common words ("research", "alive", "deliver") from firing a search.
+  WEB_SEARCH_TRIGGERS: new RegExp([
+    // — explicit requests (English)
+    String.raw`\b(?:search(?:\s+(?:for|the\s+web|online|up))?|google(?:\s+it)?|look\s+(?:it\s+|this\s+|that\s+)?up|find\s+out|check\s+(?:online|the\s+web|the\s+internet)|browse\s+the\s+(?:web|internet)|web\s+search)\b`,
+    // — "latest / current …" + something that changes over time
+    String.raw`\b(?:latest|newest|breaking|current|recent|up[-\s]to[-\s]date)\s+(?:news|headlines?|version|release|update|price|prices|score|scores|results?|events?|stats?)\b`,
+    String.raw`\b(?:news|headlines?)\s+(?:about|on|for|today|from)\b`,
+    String.raw`\bwhat(?:'s|\s+is|\s+are)\s+(?:the\s+)?(?:weather|temperature|forecast|exchange\s+rate|price|score|news|trending)\b`,
+    String.raw`\b(?:weather|forecast|temperature)\b.{0,25}\b(?:today|tonight|tomorrow|this\s+week|in|at|for)\b`,
+    String.raw`\b(?:price|cost|value|worth|rate)s?\s+of\b.{0,30}\b(?:bitcoin|btc|ethereum|eth|crypto|gold|silver|oil|dollar|euro|stock|shares?|usd|eur)\b`,
+    String.raw`\b(?:bitcoin|btc|ethereum|eth|gold|silver|oil|usd|eur|dollar|euro)\b.{0,15}\b(?:price|rate|worth|value)\b`,
+    String.raw`\b(?:stock|share)\s+price\b`,
+    String.raw`\bexchange\s+rate\b`,
+    String.raw`\bwho\s+(?:won|is\s+winning|wins)\b`,
+    String.raw`\b(?:release\s+date|box\s+office|election\s+results?|match\s+results?)\b`,
+    String.raw`\b(?:current|new)\s+(?:president|prime\s+minister|ceo|champion|leader)\b`,
+    String.raw`\b(?:right\s+now|as\s+of\s+today|today's|this\s+week's)\b`,
+    // — Persian
+    "سرچ کن|جستجو کن|جست‌?وجو کن|برو سرچ|برو ببین|اینترنت چیه|آنلاین چک کن",
+    "قیمت.{0,15}(?:امروز|الان|الان چنده|لحظه)|اخبار.{0,10}(?:امروز|لحظه|جدید)|(?:آب‌وهوا|هوا).{0,10}(?:امروز|فردا|الان)",
+    "نرخ.{0,15}(?:ارز|دلار|یورو|طلا|سکه)|(?:دلار|یورو|طلا|سکه|بیت‌?کوین).{0,10}(?:قیمت|نرخ|چنده)",
+  ].join("|"), "i"),
 
   // Default daily limit for web search per user
   DEF_SEARCH_LIMIT:    10,   // default daily search limit (per user)
@@ -1840,7 +1862,7 @@ async function getGC(db) {
     // and will never go below 1
     maxMultiPhoto:         Math.min(C.HARD_CAP_MULTI_PHOTO, Math.max(1, m.maxMultiPhoto ?? C.MAX_MULTI_PHOTO)),
     // ─── new features (global defaults) ───────────────────────
-    globalWebSearch:        Boolean(m.globalWebSearch),          // false by default
+    globalWebSearch:        m.globalWebSearch ?? true,          // true by default (limits still apply)
     globalImportanceScore:  m.globalImportanceScore  ?? true,   // true by default
     globalMemoryEnabled:    m.globalMemoryEnabled     ?? true,   // true by default
     globalSearchLimit:      m.globalSearchLimit       ?? C.DEF_SEARCH_LIMIT,
@@ -1848,6 +1870,8 @@ async function getGC(db) {
     // ─── bot language (bilingual support) ───────────────────────
     // "en" or "fa". Per-chat config can override this via chatCfg.lang.
     defaultLang:            m.defaultLang             ?? C.DEF_LANG,
+    // Language the AI replies in: "auto" = match each user (default), or force "en" / "fa"
+    replyLang:              ["auto","en","fa"].includes(m.replyLang) ? m.replyLang : "auto",
     // System-prompt modes the admin switched OFF (2..5; mode 1 is always on). Default [] = all on.
     disabledModes:          Array.isArray(m.disabledModes) ? m.disabledModes.map(Number).filter(x => [2,3,4,5].includes(x)) : [],
     // ─── voice/TTS generation (§ 8b VoiceGen) ────────────────────
@@ -4593,12 +4617,28 @@ async function saveModePrompts(db, chatId, prompts) {
  * resolveSystemPrompt — build the final system prompt with memory
  * Memory is appended as a separate section, not inside the base prompt
  */
+// ─── _languageDirective — how the AI chooses its reply language (Setup / Config → Reply language) ──
+function _languageDirective(replyLang) {
+  if (replyLang === "en") return "🌐 LANGUAGE: Always reply in natural, casual English, even if the user writes in another language — unless they explicitly ask for a different language or you are teaching one.";
+  if (replyLang === "fa") return "🌐 LANGUAGE: Always reply in natural, casual conversational Persian (Farsi) in Persian script (می‌دونم، می‌خوام، خوبی), unless the user explicitly asks for a different language or you are teaching one.";
+  return "🌐 LANGUAGE: Reply in the same language the user writes in; if it is unclear, use English. For Persian use natural, casual conversational Farsi in Persian script (می‌دونم، می‌خوام، خوبی). For every other language, sound equally natural and casual.";
+}
+// ─── _nameDirective — what the AI answers when someone asks "what is your name?" ──
+function _nameDirective(botName) {
+  const n = String(botName || "").replace(/[<>\u0000\r\n]/g, " ").trim().slice(0, 40);
+  if (n) return `🪪 NAME: Your name is "${n}". Whenever anyone asks who you are or what your name is, answer that you are ${n}.`;
+  return `🪪 NAME: Your default name is "Niki" (Persian: نیکی). Whenever anyone asks who you are or what your name is, say you are Niki — unless the instructions above explicitly give you a different name, in which case use that name.`;
+}
 // ─── _resolveBasePrompt — pick the right prompt string for this chat/mode ──
 function _resolveBasePrompt(mode, ctx, gc, isPrivate, displayName, wsEnabled) {
   // Modes 4/5 are dedicated built-in personas (English teacher / programming
   // assistant) — they don't participate in the admin custom-prompt-override
   // system that modes 1/2 use, so always go straight to buildSystemPrompt.
-  if (mode === 4 || mode === 5) return buildSystemPrompt(mode, displayName, isPrivate, wsEnabled);
+  // Returns { base, isCustom }: isCustom=true means an admin/user-written
+  // system prompt was used and must be respected as-is (no forced name).
+  if (mode === 4 || mode === 5) {
+    return { base: buildSystemPrompt(mode, displayName, isPrivate, wsEnabled, gc.replyLang, gc.botName), isCustom: false };
+  }
   let base = "";
   if (isPrivate) {
     const local  = mode===2 ? ctx.privatePrompt2 : ctx.privatePrompt1;
@@ -4613,7 +4653,8 @@ function _resolveBasePrompt(mode, ctx, gc, isPrivate, displayName, wsEnabled) {
     else if (mode===1 && ctx.groupPrompt?.trim())   base = ctx.groupPrompt.trim();
     else if (global?.trim())                    base = global.trim();
   }
-  return base || buildSystemPrompt(mode, displayName, isPrivate, wsEnabled);
+  if (base) return { base, isCustom: true };
+  return { base: buildSystemPrompt(mode, displayName, isPrivate, wsEnabled, gc.replyLang, gc.botName), isCustom: false };
 }
 
 async function resolveSystemPrompt(env, db, chatId, userId, displayName, isPrivate, lastUserMsg="", memEnabled=true, wsEnabled=false) {
@@ -4621,25 +4662,40 @@ async function resolveSystemPrompt(env, db, chatId, userId, displayName, isPriva
   // A mode the admin switched off in the panel behaves as Mode 1
   if (mode !== 1 && ((await getGC(db)).disabledModes || []).includes(mode)) mode = 1;
 
-  // mode 3 = one-shot temp prompt
+  // mode 3 = one-shot temp prompt — fully custom, respect it as written (no forced botName).
   if (mode === 3) {
     const c = await getTempPrompt(db, chatId);
-    if (c?.trim()) return _attachMemory(env, db, chatId, userId, c.trim(), lastUserMsg, memEnabled);
+    if (c?.trim()) {
+      const only = c.trim() + "\n\n🪪 IDENTITY: Your name and persona are defined ONLY by the instructions above. Never introduce yourself by any other name.";
+      return _attachMemory(env, db, chatId, userId, only, lastUserMsg, memEnabled);
+    }
     await setPromptMode(db, chatId, 1); // expired temp prompt → fall back to mode 1
   }
 
   const [ctx, gc] = await Promise.all([getContextualPrompt(db, chatId), getGC(db)]);
-  let basePrompt = _resolveBasePrompt(mode, ctx, gc, isPrivate, displayName, wsEnabled);
+  const resolved = _resolveBasePrompt(mode, ctx, gc, isPrivate, displayName, wsEnabled);
+  let basePrompt = resolved.base;
+  if (mode !== 4) basePrompt += "\n\n" + _languageDirective(gc.replyLang);
   if (gc.ttsProvider !== "cloudflare") {
     // Google (Gemini TTS) speaks every language natively — lift the English-only rule.
     basePrompt = basePrompt.replace(/- LANGUAGE: the voice engine only speaks English\.[^\n]*/,
       "- LANGUAGE: the voice engine speaks ANY language natively (Persian, German, Arabic, French, Spanish, Turkish, Chinese, Japanese… everything). Put `text` in whatever language the user wants to hear — by default the language you are replying in, or the language they asked for. If the user asks for a Persian/Farsi voice (ویس فارسی، فارسی بگو), `text` MUST be written in Persian script — NEVER translate it to English, and never answer with an English voice to a Persian request. Do NOT translate to English unless the user asked for English. Your visible chat message stays as always." +
       (gc.ttsAutoStyle !== false ? "\n- TONE: you control HOW the voice sounds. Pass `style` to generate_voice with a few English words for the delivery — e.g. 'warm and cheerful', 'whispering', 'sad and slow', 'excited', 'calm storyteller', 'serious' — chosen from what the user asked for (\"با لحن شاد بگو\", \"آروم\", \"غمگین\"…) or from the emotion of the sentence itself. Change it from message to message when the mood changes; omit it only when a neutral voice is right." : ""));
   }
-  const namedPrompt = gc.botName
-    ? basePrompt + `\n\n🏷️ YOUR NAME: Your name is "${gc.botName}". Always introduce yourself and refer to yourself as "${gc.botName}" — never as "نیکی" or "Niki".`
-    : basePrompt;
-  return _attachMemory(env, db, chatId, userId, namedPrompt, lastUserMsg, memEnabled);
+
+  // ── Identity rules ──────────────────────────────────────────────────
+  // Custom system prompt (Config → Default private/group prompts, or per-chat):
+  //   → use it as-is. Do NOT inject Bot name (e.g. "ممد بات"). If the prompt
+  //     says the bot is "سارا", the bot is Sara.
+  // No custom prompt (built-in persona):
+  //   → inject Bot name from Config → Bot name (empty → "Niki").
+  let finalPrompt;
+  if (resolved.isCustom) {
+    finalPrompt = basePrompt + "\n\n🪪 IDENTITY: Your name and persona are defined ONLY by the system instructions above. Never introduce yourself by any other name (ignore any conflicting name from memory or previous turns).";
+  } else {
+    finalPrompt = basePrompt + "\n\n" + _nameDirective(gc.botName);
+  }
+  return _attachMemory(env, db, chatId, userId, finalPrompt, lastUserMsg, memEnabled);
 }
 
 /**
@@ -6417,7 +6473,7 @@ function _toolsBlock(personaName) {
 - For MULTIPLE images (e.g. "چند عکس بده", "3 عکس", "a few pictures", "2 different images"): call generate_images() with an array of DIFFERENT prompts. Max 4. Each prompt should be unique — don't repeat.
 - If user says "یه عکس" or asks for ONE image, always use generate_image() (single).
 - prompt must be detailed (style, colors, mood, lighting, composition).
-- caption should be a short warm Farsi sentence.
+- caption should be a short, warm sentence in your reply language.
 
 😀 EMOJI REACTIONS — FULLY AUTOMATIC, NO TOOL CALL:
 - There is no reaction tool/function anymore — never try to call one for this.
@@ -6463,14 +6519,14 @@ const PUBLIC_PROMPT_TEXT = {
   },
 };
 
-function buildSystemPrompt(mode, displayName, isPrivate, webSearchEnabled=false) {
+function buildSystemPrompt(mode, displayName, isPrivate, webSearchEnabled=false, replyLang="auto", botName="") {
   const nameHint = displayName ? `\n\n🏷️ THE USER'S NAME: Call them "${displayName}" naturally sometimes.` : "";
   const wsHint = webSearchEnabled ? `
 
 🌐 WEB SEARCH — ACTIVE:
-- You have web_search enabled. USE IT when the user asks about: prices (قیمت طلا، دلار)، news (اخبار)، weather (آب‌وهوا)، current events، or anything time-sensitive.
-- Also use when user says: سرچ کن، جستجو کن، برو ببین، check online, search for.
-- After searching, summarize the result naturally in Farsi — don't paste raw data.
+- You have web_search enabled. USE IT when the user asks about: prices (gold, currencies, crypto, stocks — قیمت طلا، دلار), news (اخبار), weather (آب‌وهوا), sports results, current events, or anything time-sensitive.
+- Also use it when the user says things like: "search for", "look it up", "check online", سرچ کن، جستجو کن، برو ببین.
+- After searching, summarize the result naturally in your normal reply language (see the LANGUAGE rule) — don't paste raw data or long URLs.
 - If search returns no result, say so honestly.` : "";
 
   // ── MODE 4 — English teaching ────────────────────────────────────────
@@ -6478,10 +6534,13 @@ function buildSystemPrompt(mode, displayName, isPrivate, webSearchEnabled=false)
   if (mode === 4) {
     const body = `
 🎯 CORE RULES:
-- You are a patient, encouraging English teacher. The student's native language is Farsi.
-- Default to bilingual replies: explain in simple English, then a short Farsi
+- You are a patient, encouraging English teacher.
+${replyLang === "fa"
+  ? `- The student's native language is Farsi. Default to bilingual replies: explain in simple English, then a short Farsi
   clarification when a concept, grammar rule, or word might be unclear —
-  keep the Farsi part brief, it's a safety net, not the main content.
+  keep the Farsi part brief, it's a safety net, not the main content.`
+  : `- Explain in clear, simple English. If the student writes in another language, add a very short clarification in
+  THEIR language when a concept, grammar rule or word might be unclear — keep it brief, it's a safety net, not the main content.`}
 - Actively correct the student's English mistakes: quote the wrong part,
   give the correct version, and a one-line reason (grammar rule, common
   usage, etc). Do this gently — praise what's right before correcting what's wrong.
@@ -6531,7 +6590,6 @@ ${_toolsBlock("این ربات")}`.trim();
   // (Config → Default prompts) or per chat; edit PUBLIC_PROMPT_TEXT to change the default.
   const base = `
 🎯 CORE RULES:
-- Reply in the same language the user writes in (Farsi or English).
 - Be friendly, clear and helpful. Keep replies short unless the user asks for detail.
 - Write ONLY your message — no action descriptions in parentheses.
 - Be honest: if you don't know something, say so.${_codeRules}${nameHint}${wsHint}
@@ -6539,7 +6597,11 @@ ${_toolsBlock("نیکی")}
 
 IMAGE RULES: Nothing explicit. Call the image function EVERY time the user asks for an image.`.trim();
 
-  const role = PUBLIC_PROMPT_TEXT[isPrivate ? "private" : "group"][mode === 2 ? 2 : 1];
+  // Use configured botName in the opening "You are X" line when set; otherwise keep "Niki".
+  // Empty botName still works — falls back to "Niki".
+  const bn = String(botName || "").replace(/[<>\u0000\r\n]/g, " ").trim().slice(0, 40) || "Niki";
+  let role = PUBLIC_PROMPT_TEXT[isPrivate ? "private" : "group"][mode === 2 ? 2 : 1];
+  if (bn !== "Niki") role = role.replace(/\bNiki\b/g, bn);
   return `${role}\n\n${base}`;
 }
 
@@ -6603,64 +6665,108 @@ const I18N = {
     grpLimitVoiceTotal: "⛔ The group's total voice limit is used up. Contact an admin.",
     permDenied:      (v) => `⛔ You don't have sufficient permission.\nRequired: ${v.badge} <b>${v.needed}</b> | You: <b>${v.userPerm}</b>`,
     youPronoun:       "you",
-    helpPrivate: (v) => `🤖 <b>Niki Bot — Private Chat</b>
-Model: <code>${v.model}</code>  |  Keys: <code>${v.keys}</code>  |  Mode: <code>${v.mode}</code>
+    helpPrivate: (v) => `🤖 <b>Niki — Help</b>
+<i>Your AI companion for chat, images, voice and learning</i>
+🧠 <code>${v.model}</code> · 🔑 ${v.keys} · 🎭 mode ${v.mode}
 
-👤 <b>Account</b>
-<code>/setname &lt;name&gt;</code>  set your display name
-<code>/myperm</code>  your permission level
-<code>/mylimit</code>  your remaining limits
-<code>/stats</code>  your usage stats
+💬 <b>Just talk to me</b>
+Write in any language, send photos or voice notes, or ask me to draw something.
+🔎 Need fresh info? Say <i>“search …”</i> or ask for the latest news, weather or prices.
 
-🎁 <b>Invites</b>
-<code>/invite</code>  (alias <code>/mylink</code>)  get your invite link
-<code>/myfriends</code>  (alias <code>/friends</code>)  friends you've invited
+👤 <b>My account</b>
+<code>/setname &lt;name&gt;</code> — set the name I call you
+<code>/myperm</code> — your permission level
+<code>/mylimit</code> — your remaining limits
+<code>/stats</code> — your usage stats
 
-🎟 <b>Plans</b>
-<code>/packages</code>  view/buy available usage packages
+🎁 <b>Invites &amp; plans</b>
+<code>/invite</code> — get your personal invite link
+<code>/myfriends</code> — friends you've invited
+<code>/packages</code> — view or buy usage packages
 
-🎨 <b>Content</b>
-<code>/image &lt;prompt&gt;</code>  generate 1 image
-<code>/image 2 &lt;prompt&gt;</code>  generate 2 images (up to 4)
+🎨 <b>Create</b>
+<code>/image &lt;prompt&gt;</code> — generate an image
+<code>/image 2 &lt;prompt&gt;</code> — generate several images (up to 4)
 
-🧠 <b>Memory &amp; persona</b>
-<code>/mode 1|2|3|4|5</code>  switch AI persona mode (4: English tutor, 5: coding)
-<code>/reset</code>  clear this chat's memory
-<code>/memstats</code>  long-term memory stats
-<code>/memclear</code>  clear long-term memory
+🧠 <b>Persona &amp; memory</b>
+<code>/mode 1|2|3|4|5</code> — switch persona: 1 Normal · 2 Analytical · 3 Custom · 4 English tutor · 5 Coding
+<code>/reset</code> — clear this chat's memory
+<code>/memstats</code> — long-term memory stats
+<code>/memclear</code> — clear long-term memory
 
 ⚙️ <b>Settings</b>
-<code>/alwayson</code>  toggle replying to every message
-<code>/lang fa|en</code>  switch the language of the bot's fixed messages (help/limits/errors)
-<code>/app</code>  open the graphical Niki Mini App (chat + quizzes + stats)`,
-    helpGroup: (v) => `🤖 <b>Niki Bot — Group</b>
-Model: <code>${v.model}</code>  |  Keys: <code>${v.keys}</code>  |  Mode: <code>${v.mode}</code>
+<code>/alwayson</code> — reply to every message (on/off)
+<code>/lang fa|en</code> — language of my fixed messages
+<code>/app</code> — open the Niki Mini App (chat, quizzes, stats)
 
-💬 Without alwayson: the message must contain <b>Niki</b> or <b>niki</b>.
-🟢 With alwayson: replies to every message.
+✨ <i>Tip: tap /app for the full graphical experience.</i>`,
+    helpGroup: (v) => `🤖 <b>Niki — Group Help</b>
+<i>Your AI companion for chat, images, voice and learning</i>
+🧠 <code>${v.model}</code> · 🔑 ${v.keys} · 🎭 mode ${v.mode}
+
+💬 <b>How to talk to me</b>
+Say <b>Niki</b> in your message or reply to one of mine. With <code>/alwayson</code> I answer everything.
+🔎 Ask me to <i>“search …”</i> or for the latest news, weather or prices and I'll check the web.
 
 👤 <b>Everyone</b>
-<code>/image &lt;prompt&gt;</code>  <code>/invite</code>  <code>/mylimit</code>  <code>/stats</code>  <code>/myperm</code>  <code>/packages</code>
+<code>/image &lt;prompt&gt;</code> — generate an image
+<code>/mylimit</code> — your remaining limits
+<code>/stats</code> — group activity &amp; leaderboard
+<code>/myperm</code> — your role in this group
+<code>/packages</code> — view usage packages
+<code>/invite</code> — your personal invite link
 
-🛡 <b>Admins only</b>
-<u>Behavior</u>: <code>/silent</code> mute Niki  |  <code>/alwayson</code> toggle  |  <code>/lockdown</code> toggle  |  <code>/lang fa|en</code> fixed-message language
-<u>Persona &amp; memory</u>: <code>/mode 1|2|3|4|5</code>  |  <code>/reset</code>  |  <code>/memstats</code>  |  <code>/memclear</code>
-<u>Messages</u>: <code>/say &lt;text&gt;</code>  |  <code>/delete n</code>  |  <code>/purge n</code>  |  <code>/clear</code>
-<u>Pins</u>: <code>/pin</code>  |  <code>/unpin</code>  |  <code>/unpinall</code>
-<u>Chat history</u>: <code>/histclear</code>
-<u>Long-term log</u>: <code>/log</code>  |  <code>/logclear</code>  |  <code>/logremove n</code>
-<u>Admin roster</u>: <code>/admins</code>  |  <code>/setleader @u</code>  |  <code>/promote @u</code>  |  <code>/demote @u</code>
-<u>Moderation</u>: <code>/mute @u</code>  |  <code>/unmute @u</code>  |  <code>/ban @u</code>  |  <code>/unban @u</code>`,
+🛡 <b>Admins</b>
+
+🎛 <b>Behavior</b>
+<code>/silent</code> — mute or unmute me
+<code>/alwayson</code> — reply to every message (on/off)
+<code>/lockdown</code> — toggle lockdown mode
+<code>/lang fa|en</code> — language of my fixed messages
+
+🧠 <b>Persona &amp; memory</b>
+<code>/mode 1|2|3|4|5</code> — switch persona (opens a picker without a number)
+<code>/reset</code> — clear this chat's memory
+<code>/memstats</code> — long-term memory stats
+<code>/memclear</code> — clear long-term memory
+<code>/histclear</code> — clear history and archive
+
+💬 <b>Messages</b>
+<code>/say &lt;text&gt;</code> — post a message as me
+<code>/delete n</code> — forget the last n messages
+<code>/purge n</code> — delete the last n messages (1–100)
+<code>/clear</code> — delete recent messages and wipe memory
+<code>/pin</code> — pin a message (reply to it)
+<code>/unpin</code> — unpin a message
+<code>/unpinall</code> — unpin everything
+
+👑 <b>Roles</b>
+<code>/admins</code> — show leader and admins
+<code>/setleader @u</code> — set the group leader
+<code>/promote @u</code> — make someone an admin
+<code>/demote @u</code> — remove admin rights
+
+🔨 <b>Moderation</b>
+<code>/mute @u</code> — mute a member
+<code>/unmute @u</code> — unmute a member
+<code>/ban @u</code> — ban a member
+<code>/unban @u</code> — unban a member`,
     helpTechnical: (v) => `
 
-🔧 <b>Technical (superuser only)</b>
-<u>Diagnostics</u>: <code>/debug</code> runtime/state snapshot  |  <code>/testai</code> test all Gemini keys  |  <code>/testimage</code> test the image pipeline
+🔧 <b>Technical · super admins only</b>
+<code>/debug</code> — runtime and state snapshot
+<code>/testai</code> — test all Gemini keys
+<code>/testimage</code> — test the image pipeline
+<code>/log</code> — recent system events of this chat
+<code>/logclear</code> — clear the log
+<code>/logremove n</code> — remove log entry n
 
-<u>External API</u> — <code>POST /api/chat</code>, <code>/api/tts</code>, <code>/api/stt</code>
-Auth: header <code>X-API-Key: &lt;key&gt;</code> (also accepts <code>Authorization: Bearer &lt;key&gt;</code> or <code>?api_key=</code>). Keys are issued and revoked from the Admin Panel → API Keys tab, where per-key CORS and pool size are also toggled.
+🔌 <b>External API</b>
+<code>POST /api/chat</code> · <code>/api/tts</code> · <code>/api/stt</code>
+Auth: <code>X-API-Key: &lt;key&gt;</code> (or <code>Authorization: Bearer &lt;key&gt;</code>). Keys are managed in the admin panel → API Keys.
 
-<u>Runtime</u>: model <code>${v.model}</code>  |  active Gemini keys <code>${v.keys}</code>  |  storage: D1 (SQLite) + KV cache
-<u>Webhook security</u>: Telegram <code>secret_token</code> header verification + <code>update_id</code> dedup via KV`,
+⚙️ <b>Runtime</b>: <code>${v.model}</code> · active keys ${v.keys} · D1 + KV
+🛡 <b>Webhook</b>: <code>secret_token</code> check + <code>update_id</code> de-duplication`,
   },
   fa: {
     groupNotActivated: "⛔ این گروه هنوز فعال نشده. سازنده‌ی گروه باید اول درخواست فعال‌سازی بدهد.",
@@ -6678,64 +6784,108 @@ Auth: header <code>X-API-Key: &lt;key&gt;</code> (also accepts <code>Authorizati
     grpLimitVoiceTotal: "⛔ لیمیت کل صدای گروه تموم شده. با ادمین تماس بگیر.",
     permDenied:      (v) => `⛔ دسترسی کافی نداری.\nنیاز: ${v.badge} <b>${v.needed}</b> | تو: <b>${v.userPerm}</b>`,
     youPronoun:       "تو",
-    helpPrivate: (v) => `🤖 <b>نیکی بات — چت خصوصی</b>
-مدل: <code>${v.model}</code>  |  کلیدها: <code>${v.keys}</code>  |  حالت: <code>${v.mode}</code>
+    helpPrivate: (v) => `🤖 <b>نیکی — راهنما</b>
+<i>همراه هوشمند تو برای گفتگو، تصویر، صدا و یادگیری</i>
+🧠 <code>${v.model}</code> · 🔑 ${v.keys} · 🎭 حالت ${v.mode}
+
+💬 <b>فقط باهام حرف بزن</b>
+به هر زبانی بنویس، عکس یا ویس بفرست یا بگو برات نقاشی بکشم.
+🔎 اطلاعات تازه می‌خوای؟ بگو <i>«سرچ کن …»</i> یا آخرین اخبار، آب‌وهوا و قیمت‌ها رو بپرس.
 
 👤 <b>حساب من</b>
-<code>/setname &lt;اسم&gt;</code>  تنظیم اسم نمایشی
-<code>/myperm</code>  سطح دسترسیت
-<code>/mylimit</code>  لیمیت باقیمانده
-<code>/stats</code>  آمار مصرفت
+<code>/setname &lt;اسم&gt;</code> — تنظیم اسمی که صدات می‌زنم
+<code>/myperm</code> — سطح دسترسی تو
+<code>/mylimit</code> — لیمیت باقی‌مانده
+<code>/stats</code> — آمار مصرف تو
 
-🎁 <b>دعوت</b>
-<code>/invite</code>  (یا <code>/mylink</code>)  گرفتن لینک دعوت
-<code>/myfriends</code>  (یا <code>/friends</code>)  دوستایی که دعوت کردی
+🎁 <b>دعوت و پکیج‌ها</b>
+<code>/invite</code> — گرفتن لینک دعوت شخصی
+<code>/myfriends</code> — دوستایی که دعوت کردی
+<code>/packages</code> — دیدن و خرید پکیج‌های مصرفی
 
-🎟 <b>پکیج‌ها</b>
-<code>/packages</code>  دیدن/خرید پکیج‌های مصرفی
+🎨 <b>خلاقیت</b>
+<code>/image &lt;توضیح&gt;</code> — ساخت یک تصویر
+<code>/image 2 &lt;توضیح&gt;</code> — ساخت چند تصویر (تا ۴)
 
-🎨 <b>محتوا</b>
-<code>/image &lt;prompt&gt;</code>  تولید ۱ تصویر
-<code>/image 2 &lt;prompt&gt;</code>  تولید ۲ تصویر (تا ۴)
-
-🧠 <b>حافظه و شخصیت</b>
-<code>/mode 1|2|3|4|5</code>  عوض کردن حالت شخصیت (۴: آموزش انگلیسی، ۵: برنامه‌نویسی)
-<code>/reset</code>  پاک کردن حافظه‌ی این چت
-<code>/memstats</code>  آمار حافظه‌ی بلندمدت
-<code>/memclear</code>  پاک کردن حافظه‌ی بلندمدت
+🧠 <b>شخصیت و حافظه</b>
+<code>/mode 1|2|3|4|5</code> — تغییر حالت: ۱ عادی · ۲ تحلیلی · ۳ سفارشی · ۴ آموزش انگلیسی · ۵ برنامه‌نویسی
+<code>/reset</code> — پاک کردن حافظهٔ این چت
+<code>/memstats</code> — آمار حافظهٔ بلندمدت
+<code>/memclear</code> — پاک کردن حافظهٔ بلندمدت
 
 ⚙️ <b>تنظیمات</b>
-<code>/alwayson</code>  toggle جواب به همه پیام‌ها
-<code>/lang fa|en</code>  عوض کردن زبان پیام‌های ثابت ربات (راهنما/لیمیت/خطاها)
-<code>/app</code>  باز کردن مینی‌اپ گرافیکی نیکی (چت + کوییز + آمار)`,
-    helpGroup: (v) => `🤖 <b>نیکی بات — گروه</b>
-مدل: <code>${v.model}</code>  |  کلیدها: <code>${v.keys}</code>  |  حالت: <code>${v.mode}</code>
+<code>/alwayson</code> — جواب به همهٔ پیام‌ها (روشن/خاموش)
+<code>/lang fa|en</code> — زبان پیام‌های ثابت ربات
+<code>/app</code> — باز کردن مینی‌اپ نیکی (چت، کوییز، آمار)
 
-💬 بدون alwayson: باید <b>نیکی</b> یا <b>niki</b> توی پیام باشه.
-🟢 با alwayson: به همه پیام‌ها جواب میده.
+✨ <i>نکته: با /app تجربهٔ گرافیکی کامل رو داری.</i>`,
+    helpGroup: (v) => `🤖 <b>نیکی — راهنمای گروه</b>
+<i>همراه هوشمند شما برای گفتگو، تصویر، صدا و یادگیری</i>
+🧠 <code>${v.model}</code> · 🔑 ${v.keys} · 🎭 حالت ${v.mode}
+
+💬 <b>چطور با من حرف بزنید</b>
+اسم <b>نیکی</b> یا <b>Niki</b> رو توی پیام بنویسید یا روی پیام من ریپلای کنید. با <code>/alwayson</code> به همه‌چیز جواب می‌دم.
+🔎 بگید <i>«سرچ کن …»</i> یا آخرین اخبار، آب‌وهوا و قیمت‌ها رو بپرسید تا توی وب بگردم.
 
 👤 <b>همه</b>
-<code>/image &lt;prompt&gt;</code>  <code>/invite</code>  <code>/mylimit</code>  <code>/stats</code>  <code>/myperm</code>  <code>/packages</code>
+<code>/image &lt;توضیح&gt;</code> — ساخت تصویر
+<code>/mylimit</code> — لیمیت باقی‌مانده
+<code>/stats</code> — فعالیت گروه و جدول برترین‌ها
+<code>/myperm</code> — نقش شما در گروه
+<code>/packages</code> — دیدن پکیج‌های مصرفی
+<code>/invite</code> — لینک دعوت شخصی
 
-🛡 <b>فقط ادمین‌ها</b>
-<u>رفتار بات</u>: <code>/silent</code> سکوت نیکی  |  <code>/alwayson</code> toggle  |  <code>/lockdown</code> toggle  |  <code>/lang fa|en</code> زبان پیام‌های ثابت
-<u>شخصیت و حافظه</u>: <code>/mode 1|2|3|4|5</code>  |  <code>/reset</code>  |  <code>/memstats</code>  |  <code>/memclear</code>
-<u>پیام‌ها</u>: <code>/say متن</code>  |  <code>/delete n</code>  |  <code>/purge n</code>  |  <code>/clear</code>
-<u>پین</u>: <code>/pin</code>  |  <code>/unpin</code>  |  <code>/unpinall</code>
-<u>حافظه‌ی این چت</u>: <code>/histclear</code>
-<u>لاگ بلندمدت</u>: <code>/log</code>  |  <code>/logclear</code>  |  <code>/logremove n</code>
-<u>فهرست ادمین‌ها</u>: <code>/admins</code>  |  <code>/setleader @u</code>  |  <code>/promote @u</code>  |  <code>/demote @u</code>
-<u>مدیریت اعضا</u>: <code>/mute @u</code>  |  <code>/unmute @u</code>  |  <code>/ban @u</code>  |  <code>/unban @u</code>`,
+🛡 <b>ادمین‌ها</b>
+
+🎛 <b>رفتار ربات</b>
+<code>/silent</code> — ساکت کردن یا فعال کردن من
+<code>/alwayson</code> — جواب به همهٔ پیام‌ها (روشن/خاموش)
+<code>/lockdown</code> — روشن/خاموش کردن حالت قفل
+<code>/lang fa|en</code> — زبان پیام‌های ثابت ربات
+
+🧠 <b>شخصیت و حافظه</b>
+<code>/mode 1|2|3|4|5</code> — تغییر حالت (بدون عدد، منوی انتخاب باز می‌شه)
+<code>/reset</code> — پاک کردن حافظهٔ این چت
+<code>/memstats</code> — آمار حافظهٔ بلندمدت
+<code>/memclear</code> — پاک کردن حافظهٔ بلندمدت
+<code>/histclear</code> — پاک کردن تاریخچه و آرشیو
+
+💬 <b>پیام‌ها</b>
+<code>/say &lt;متن&gt;</code> — ارسال پیام از طرف من
+<code>/delete n</code> — فراموش کردن n پیام آخر
+<code>/purge n</code> — حذف n پیام آخر (۱ تا ۱۰۰)
+<code>/clear</code> — حذف پیام‌های اخیر و پاک کردن حافظه
+<code>/pin</code> — پین کردن پیام (روی آن ریپلای کنید)
+<code>/unpin</code> — برداشتن پین
+<code>/unpinall</code> — برداشتن همهٔ پین‌ها
+
+👑 <b>نقش‌ها</b>
+<code>/admins</code> — نمایش رهبر و ادمین‌ها
+<code>/setleader @u</code> — تعیین رهبر گروه
+<code>/promote @u</code> — ادمین کردن یک عضو
+<code>/demote @u</code> — گرفتن دسترسی ادمین
+
+🔨 <b>مدیریت اعضا</b>
+<code>/mute @u</code> — میوت کردن عضو
+<code>/unmute @u</code> — رفع میوت
+<code>/ban @u</code> — بن کردن عضو
+<code>/unban @u</code> — رفع بن`,
     helpTechnical: (v) => `
 
-🔧 <b>فنی (فقط سوپریوزر)</b>
-<u>دیباگ</u>: <code>/debug</code> وضعیت لحظه‌ای  |  <code>/testai</code> تست همه‌ی کلیدهای Gemini  |  <code>/testimage</code> تست مسیر تولید عکس
+🔧 <b>فنی · فقط سوپرادمین</b>
+<code>/debug</code> — وضعیت لحظه‌ای سیستم
+<code>/testai</code> — تست همهٔ کلیدهای Gemini
+<code>/testimage</code> — تست مسیر تولید تصویر
+<code>/log</code> — رویدادهای اخیر سیستم این چت
+<code>/logclear</code> — پاک کردن لاگ
+<code>/logremove n</code> — حذف ورودی شمارهٔ n از لاگ
 
-<u>API بیرونی</u> — <code>POST /api/chat</code>، <code>/api/tts</code>، <code>/api/stt</code>
-احراز هویت: هدر <code>X-API-Key: &lt;کلید&gt;</code> (یا <code>Authorization: Bearer &lt;کلید&gt;</code> یا <code>?api_key=</code>). کلیدها از پنل ادمین → تب API Keys صادر/باطل می‌شن؛ CORS و سقف مصرف هر کلید هم همون‌جا تنظیم میشه.
+🔌 <b>API بیرونی</b>
+<code>POST /api/chat</code> · <code>/api/tts</code> · <code>/api/stt</code>
+احراز هویت: <code>X-API-Key: &lt;کلید&gt;</code> (یا <code>Authorization: Bearer &lt;کلید&gt;</code>). کلیدها از پنل ادمین ← API Keys مدیریت می‌شوند.
 
-<u>Runtime</u>: مدل <code>${v.model}</code>  |  کلیدهای فعال Gemini <code>${v.keys}</code>  |  استوریج: D1 (SQLite) + کش KV
-<u>امنیت webhook</u>: تایید هدر <code>secret_token</code> تلگرام + دیدوپ <code>update_id</code> با KV`,
+⚙️ <b>Runtime</b>: <code>${v.model}</code> · کلیدهای فعال ${v.keys} · D1 + KV
+🛡 <b>Webhook</b>: بررسی <code>secret_token</code> + حذف تکراری‌ها با <code>update_id</code>`,
   },
 };
 
@@ -7017,7 +7167,7 @@ ${inner}    </div>
 // ─── Admin "Guide" tab ─────────────────────────────────────────────────────
 // Static, bilingual (gl-fa / gl-en) help for every panel tab + the Mini App
 // link. Rendered server-side; client helpers: guideFilter / guideAll / guideJump.
-const GUIDE_SECTIONS = [{"id": "overview", "icon": "📊", "tfa": "نمای کلی (Overview)", "ten": "Overview", "lfa": "اولین صفحه‌ای که بعد از ورود می‌بینی؛ وضعیت لحظه‌ای ربات و درخواست‌های منتظر تأیید.", "len": "The first screen after login: a live snapshot of your bot and the requests waiting for approval.", "steps": [["کارت‌های بالای صفحه تعداد کاربران، گروه‌های فعال، پیام‌ها، تصاویر و ویس‌های <b>امروز</b> و تعداد درخواست‌های در انتظار را نشان می‌دهند.", "The cards at the top show total users, active groups, and <b>today's</b> messages, images and voice plus the number of pending requests."], ["در جدول <b>درخواست‌ها (Requests)</b> هر گروهی که ربات را اضافه کرده و منتظر فعال‌سازی است دیده می‌شود: شناسه چت، نام گروه، درخواست‌دهنده و زمان.", "The <b>Requests</b> table lists every group that added the bot and waits for activation: chat ID, name, requester and time."], ["با <b>تأیید</b> گروه فعال می‌شود و ربات در آن پاسخ می‌دهد؛ با <b>رد</b> درخواست حذف می‌شود.", "<b>Approve</b> activates the group so the bot starts replying there; <b>Reject</b> removes the request."]], "tips": [["اگر گروهی برای ربات مهم است ولی جواب نمی‌دهد، اول همین‌جا چک کن که تأیید شده باشد.", "If the bot stays silent in a group, check here first that the group has been approved."]], "warns": [], "table": null}, {"id": "groups", "icon": "💬", "tfa": "گروه‌ها (Groups)", "ten": "Groups", "lfa": "مدیریت همهٔ گروه‌های فعال: جست‌وجو، تنظیم محدودیت و تنظیمات اختصاصی هر گروه.", "len": "Manage every active group: search, set limits and tweak per-group settings.", "steps": [["از کادر جست‌وجو با نام یا شناسهٔ گروه، سریع پیدایش کن.", "Use the search box to find a group by name or ID."], ["ستون‌های <b>Limit</b> و <b>Total</b> محدودیت و مصرف کل گروه را نشان می‌دهند.", "The <b>Limit</b> and <b>Total</b> columns show the group's quota and its overall usage."], ["با دکمه‌های هر ردیف می‌توانی محدودیت گروه را ویرایش کنی، پیام مستقیم به گروه بفرستی یا تنظیمات اختصاصی آن را باز کنی.", "The row buttons let you edit the group's limit, send it a direct message or open its dedicated settings."]], "tips": [["محدودیت پیش‌فرض گروه‌های جدید را در تب <b>Config ← Group limits</b> تعیین می‌کنی؛ اینجا فقط استثناها را عوض کن.", "Set the default for new groups in <b>Config → Group limits</b>; only change exceptions here."]], "warns": [], "table": null}, {"id": "users", "icon": "👤", "tfa": "کاربران (Users)", "ten": "Users", "lfa": "فهرست کاربران ربات با میزان مصرف و ابزار مدیریت فردی.", "len": "The list of bot users with their usage and per-user management tools.", "steps": [["جست‌وجو با نام کاربری یا شناسهٔ عددی.", "Search by username or numeric ID."], ["<b>Permanent</b> سهمیهٔ دائمی/بسته‌ای، <b>Today's daily</b> مصرف امروز، <b>Voice today</b> ویس امروز و <b>Invite</b> تعداد دعوت‌ها را نشان می‌دهد.", "<b>Permanent</b> is the lasting/package quota, <b>Today's daily</b> today's usage, <b>Voice today</b> voice usage and <b>Invite</b> the number of invites."], ["هر کاربر چهار ابزار دارد: <b>Profile</b> (مشاهدهٔ مشخصات و مصرف)، <b>Edit</b> (تغییر محدودیت‌ها)، <b>Reward</b> (هدیهٔ سهمیه) و <b>Message</b> (ارسال پیام مستقیم).", "Each user has four tools: <b>Profile</b> (details and usage), <b>Edit</b> (change limits), <b>Reward</b> (gift quota) and <b>Message</b> (direct message)."]], "tips": [["این بخش فقط آمار و سهمیه را نشان می‌دهد؛ متن گفتگوهای کاربران هیچ‌جا در پنل نیست و قابل مشاهده نمی‌باشد.", "This section only shows stats and quota; users' chat text is never available in the panel."]], "warns": [], "table": null}, {"id": "broadcast", "icon": "📢", "tfa": "ارسال همگانی (Broadcast)", "ten": "Broadcast", "lfa": "ارسال پیام، عکس، فایل یا ویس به همه یا بخشی از چت‌ها به‌صورت صف (Mission) و دسته‌ای.", "len": "Send text, photos, files or voice to all or some chats as a queued, batched mission.", "steps": [["<b>Recipient</b> را انتخاب کن: همه، فقط کاربران خصوصی، فقط گروه‌ها یا یک چت مشخص (با شناسه).", "Pick the <b>Recipient</b>: everyone, private users only, groups only, or one specific chat (by ID)."], ["<b>Content type</b> را مشخص کن: متن، تصویر، فایل یا ویس؛ سپس متن/کپشن و در صورت نیاز فایل را بده.", "Choose the <b>Content type</b> — text, image, file or voice — then enter the text/caption and the file if needed."], ["<b>Queue priority</b> ترتیب اجرای ماموریت‌ها را تعیین می‌کند (عدد بزرگ‌تر زودتر).", "<b>Queue priority</b> decides mission order (higher runs sooner)."], ["با <b>Create mission</b> ماموریت ساخته می‌شود. در <b>Live mission status</b> می‌توانی بروزرسانی کنی، یک دسته را همین الان بفرستی (Run now)، مکث/ادامه بدهی یا لغو کنی.", "<b>Create mission</b> queues it. In <b>Live mission status</b> you can refresh, send one batch right now (Run now), pause/resume or cancel."], ["تاریخچهٔ ماموریت‌ها و ارسال‌های کامل‌شده پایین صفحه است.", "Mission history and completed broadcasts are listed at the bottom."]], "tips": [], "warns": [["ارسال همگانی بدون هماهنگی ممکن است کاربران را ناراحت یا ربات را محدود کند. ابتدا روی یک چت مشخص (Single) تست کن.", "Unsolicited mass messages can annoy users or get the bot limited. Test on a single chat first."]], "table": null}, {"id": "apikeys", "icon": "🔑", "tfa": "کلیدهای API (API Keys)", "ten": "API Keys", "lfa": "برای وصل کردن نیکی به سایت یا اپ خودت؛ کلید بساز، محدودیت بگذار و تست کن.", "len": "Connect Niki to your own site or app: create keys, set limits and test them.", "steps": [["در <b>Create new API key</b> کلید بساز. کلید <b>فقط یک بار</b> نمایش داده می‌شود؛ همان لحظه کپی و جای امن ذخیره‌اش کن.", "In <b>Create new API key</b> make a key. It is shown <b>only once</b> — copy and store it safely right away."], ["در <b>Test console</b> کلید را بچسبان و یک درخواست آزمایشی بفرست.", "Paste the key into the <b>Test console</b> and send a test request."], ["در جدول <b>Keys</b> می‌توانی هر کلید را فعال/غیرفعال کنی، لیمیت و تاریخ انقضا بدهی و CORS را روشن/خاموش کنی.", "In the <b>Keys</b> table enable/disable each key, set limits and expiry, and toggle CORS."], ["<b>Users per key</b> کاربران هر کلید و لیمیت اختصاصی‌شان را نشان می‌دهد.", "<b>Users per key</b> shows each key's users and their dedicated limits."], ["دکمهٔ <b>API guide</b> بالای همین تب، مستندات کامل (اندپوینت‌ها، فیلدها، خطاها و نمونه‌کد) را دارد.", "The <b>API guide</b> button at the top of that tab has full docs (endpoints, fields, errors, code samples)."]], "tips": [], "warns": [["کلید API را در کد سمت کاربر (وب‌سایت عمومی) نگذار؛ هر کسی می‌تواند آن را ببیند.", "Never embed an API key in public client-side code; anyone can read it."]], "table": null}, {"id": "geminikeys", "icon": "🧬", "tfa": "کلیدهای Gemini", "ten": "Gemini keys", "lfa": "مدیریت کلیدهای هوش مصنوعی Gemini که ربات با آن‌ها کار می‌کند.", "len": "Manage the Gemini AI keys the bot runs on.", "steps": [["یک کلید رایگان از <b>aistudio.google.com/apikey</b> بگیر و در <b>Add new Gemini key</b> اضافه کن.", "Get a free key at <b>aistudio.google.com/apikey</b> and add it under <b>Add new Gemini key</b>."], ["با <b>Import / Export</b> می‌توانی چند کلید را یک‌جا وارد یا از آن‌ها پشتیبان بگیری.", "Use <b>Import / Export</b> to add several keys at once or back them up."], ["فهرست کلیدها وضعیت هر کدام را نشان می‌دهد؛ کلید خراب یا تمام‌شده را غیرفعال یا حذف کن.", "The list shows each key's status; disable or delete a broken or exhausted one."]], "tips": [["هرچه کلید بیشتری داشته باشی، فشار سهمیه بین کلیدها پخش می‌شود و ربات کمتر به محدودیت می‌خورد.", "More keys spread the quota load, so the bot hits limits less often."]], "warns": [], "table": null}, {"id": "packages", "icon": "📦", "tfa": "بسته‌ها (Packages)", "ten": "Packages", "lfa": "ساخت بستهٔ فروشی/هدیه و فعال‌سازی آن روی هر چت؛ خرید با ستارهٔ تلگرام.", "len": "Create sellable or gift packages and activate them on any chat; purchases use Telegram Stars.", "steps": [["در <b>New package template</b> یک قالب بساز (نام، سهمیهٔ پیام/تصویر، مدت و قیمت). قالب‌ها در <b>Defined templates</b> می‌مانند.", "In <b>New package template</b> create a template (name, message/image quota, duration, price). Templates stay in <b>Defined templates</b>."], ["با <b>Activate on a Chat</b> هر قالب را مستقیم روی یک کاربر یا گروه فعال کن.", "Use <b>Activate on a Chat</b> to apply a template directly to a user or group."], ["<b>Currently active packages</b> همهٔ بسته‌های در حال اجرا را نشان می‌دهد و می‌توانی آن‌ها را ویرایش یا تمدید کنی.", "<b>Currently active packages</b> lists every running package; edit or extend them there."], ["<b>Buyers</b> و <b>Star purchase history</b> خریدهای واقعی کاربران را نشان می‌دهند.", "<b>Buyers</b> and <b>Star purchase history</b> show real user purchases."]], "tips": [["کاربران با دستور <code>/packages</code> بسته‌های قابل خرید را می‌بینند.", "Users see purchasable packages with <code>/packages</code>."]], "warns": [], "table": null}, {"id": "config", "icon": "⚙️", "tfa": "تنظیمات (Config)", "ten": "Config", "lfa": "قلب پنل: محدودیت‌ها، پرامپت‌ها، هویت ربات، امنیت و صدا.", "len": "The heart of the panel: limits, prompts, bot identity, security and voice.", "steps": [], "tips": [["بعد از هر تغییر، دکمهٔ <b>ذخیره (Save)</b> همان کارت را بزن؛ هر کارت جداگانه ذخیره می‌شود.", "Press the card's own <b>Save</b> button after each change; every card saves separately."]], "warns": [["بار اول پنل بدون رمز باز می‌شود. حتماً بعد از راه‌اندازی از همین کارت یک رمز بگذار؛ تا رمز نگذاری هر کسی که آدرس پنل را بداند می‌تواند ربات را کنترل کند. اگر رمز را فراموش کردی، متغیر <code>ADMIN_PANEL_PASSWORD</code> را در Cloudflare بساز و با آن وارد شو.", "The first time, the panel opens without a password. Set one from this card right after setup — until you do, anyone who knows the panel URL can control your bot. If you forget it, create an <code>ADMIN_PANEL_PASSWORD</code> variable in Cloudflare and sign in with it."]], "table": [["📏 New-user limits / 💬 Group limits", "محدودیت‌های پیش‌فرض کاربر جدید و گروه جدید (پیام/تصویر روزانه و کل).", "Default quota for new users and new groups (daily and total messages/images)."], ["🧠 پرامپت‌ها (Default prompts)", "شخصیت پیش‌فرض نیکی در گروه، چت خصوصی و API. خالی بگذاری، پیش‌فرض داخلی استفاده می‌شود.", "Niki's default personality in groups, private chats and the API. Leave empty to use the built-in default."], ["🎉 /start reward · 🔗 Invite reward", "هدیهٔ شروع و پاداش دعوت.", "Welcome gift and invite reward."], ["🔊 Voice", "روشن/خاموش کردن ویس، انتخاب موتور و صداها.", "Turn voice on/off and pick the engine and voices."], ["🧠 Default AI model", "مدل زبانی پیش‌فرض.", "The default language model."], ["🏷️ Bot name · 🤖 Bot username", "نام نمایشی و آیدی ربات (بدون @). برای ساخت لینک دعوت و لینک مینی‌اپ لازم است.", "Display name and bot username (without @). Needed for invite and Mini App links."], ["🔑 Telegram bot token", "جایگزینی توکن ربات از داخل پنل (اولویت با پنل است).", "Override the bot token from the panel (the panel value wins)."], ["👑 Super admins", "شناسهٔ عددی سوپرادمین‌ها. (سوپرادمین‌های متغیر <code>SUPER_ADMIN_IDS</code> همیشه فعال‌اند.)", "Numeric IDs of super admins. (Those in the <code>SUPER_ADMIN_IDS</code> variable are always active.)"], ["🔐 Panel password", "رمز دائمی ورود به پنل.", "The permanent panel login password."], ["🖼 Multi-photo · 📨 Send message · 🌐 Global features", "ارسال چندعکسی، ارسال پیام تکی و کلیدهای سراسری قابلیت‌ها.", "Multi-photo sending, single message sending and global feature switches."], ["🧹 Clear history", "پاک‌سازی دائمی حافظه، آرشیو، لاگ و ... بدون دست‌زدن به کاربران، پرداخت‌ها و تنظیمات.", "Permanently wipe memory, archive, logs and more — users, payments and settings stay untouched."]]}, {"id": "features", "icon": "🧠", "tfa": "قابلیت‌ها (Features)", "ten": "Features", "lfa": "روشن/خاموش کردن امکانات برای مینی‌اپ، چت خصوصی و گروه‌ها، به‌علاوهٔ سقف روزانه و متن خوش‌آمد.", "len": "Switch capabilities on/off for the Mini App, private chats and groups, plus daily caps and welcome texts.", "steps": [["کارت <b>Mini App</b>: هر بخش مینی‌اپ را جدا خاموش/روشن کن. بخش خاموش اصلاً در اپ نمایش داده نمی‌شود.", "<b>Mini App</b> card: toggle each Mini App part. A switched-off part doesn't appear in the app at all."], ["کارت‌های <b>Private</b> و <b>Groups</b>: دستورات و قابلیت‌های هوشمند هر نوع چت را مشخص کن.", "<b>Private</b> and <b>Groups</b> cards: choose which commands and AI features each chat type gets."], ["<b>Daily caps</b> سقف روزانهٔ پیام، تصویر و ویس برای هر چت است.", "<b>Daily caps</b> sets the daily message, image and voice ceiling per chat."], ["<b>Welcome texts</b> پیام خوش‌آمد خصوصی/گروه و <b>Maintenance mode</b> حالت تعمیر است: ربات به همه جز سوپرادمین پیام «در حال به‌روزرسانی» می‌دهد.", "<b>Welcome texts</b> are the private/group greetings; <b>Maintenance mode</b> tells everyone except super admins the bot is being updated."], ["پایین صفحه <b>Per-chat features</b> است: برای یک چت مشخص جست‌وجوی وب، حافظه، امتیازدهی اهمیت، سقف جست‌وجو و زبان را جدا تنظیم کن (<b>null</b> یعنی همان تنظیم سراسری).", "At the bottom, <b>Per-chat features</b> lets you set web search, memory, importance scoring, search cap and language for one chat (<b>null</b> = use the global setting)."]], "tips": [], "warns": [], "table": null}, {"id": "logs", "icon": "📋", "tfa": "لاگ سیستم (Log)", "ten": "System log", "lfa": "ثبت رویدادهای مدیریتی، هشدارها و خطاها برای عیب‌یابی.", "len": "Admin events, warnings and errors for troubleshooting.", "steps": [["سطح را انتخاب کن: <b>Admin</b> (کارهای مدیریتی)، <b>Warn</b>، <b>Error</b> یا <b>Info</b>.", "Pick a level: <b>Admin</b> (management actions), <b>Warn</b>, <b>Error</b> or <b>Info</b>."], ["برای دیدن لاگ یک چت مشخص، شناسهٔ آن را وارد کن و <b>Load</b> بزن.", "Enter a chat ID to see its log only, then press <b>Load</b>."], ["<b>Clear</b> لاگ را پاک می‌کند (بازگشت‌ناپذیر).", "<b>Clear</b> wipes the log (irreversible)."]], "tips": [["لاگ‌ها متن پیام کاربران را ذخیره نمی‌کنند؛ فقط نوع رویداد و جزئیات فنی.", "Logs never store users' message text — only event types and technical details."]], "warns": [], "table": null}, {"id": "commands", "icon": "⌨️", "tfa": "دستورات ربات", "ten": "Bot commands", "lfa": "برگهٔ تقلب دستورات برای کاربران و ادمین‌های گروه.", "len": "A cheat sheet of commands for users and group admins.", "steps": [], "tips": [], "warns": [], "table": [["<code>/start</code> · <code>/help</code>", "شروع و راهنمای ربات (در چت خصوصی و گروه).", "Start and help (private and group)."], ["<code>/app</code>", "باز کردن مینی‌اپ (فقط چت خصوصی).", "Open the Mini App (private chat only)."], ["<code>/lang fa|en</code>", "زبان پیام‌های ثابت ربات.", "Language of the bot's fixed messages."], ["<code>/invite</code> · <code>/mylink</code>", "لینک دعوت شخصی و پاداش دعوت.", "Your personal invite link and reward."], ["<code>/mylimit</code> · <code>/myperm</code> · <code>/packages</code>", "محدودیت من، سطح دسترسی من و بسته‌های قابل خرید.", "My limits, my permission level and purchasable packages."], ["<code>/init</code>", "ثبت و درخواست فعال‌سازی گروه (توسط سازندهٔ گروه).", "Register a group and request activation (by the group owner)."], ["<code>/alwayson</code> · <code>/silent</code> · <code>/lockdown</code>", "ادمین گروه: پاسخ به همهٔ پیام‌ها، سکوت ربات، قفل.", "Group admin: reply to everything, mute the bot, lockdown."], ["<code>/promote @u</code> · <code>/demote @u</code> · <code>/admins</code>", "مدیریت ادمین‌های گروه (رهبر).", "Manage group admins (leader)."], ["<code>/mute @u</code> · <code>/ban @u</code> · <code>/unmute</code> · <code>/unban</code>", "کنترل اعضا؛ سوپرادمین‌ها قابل mute/ban نیستند.", "Member control; super admins can't be muted or banned."], ["<code>/say متن</code> · <code>/delete n</code> · <code>/purge n</code> · <code>/pin</code> · <code>/unpin</code>", "ارسال از طرف ربات، حذف و پین پیام.", "Send as the bot, delete and pin messages."], ["<code>/mode 1-5</code> · <code>/reset</code> · <code>/memstats</code> · <code>/memclear</code>", "شخصیت، بازنشانی و حافظهٔ بلندمدت.", "Persona, reset and long-term memory."], ["<code>/histclear</code> · <code>/logclear</code>", "پاک‌سازی حافظه و لاگ همین چت.", "Wipe this chat's memory and log."]]}, {"id": "security", "icon": "🔐", "tfa": "امنیت و حریم خصوصی", "ten": "Security & privacy", "lfa": "چطور پنل و پیام‌های کاربران امن می‌مانند.", "len": "How the panel and users' messages stay safe.", "steps": [["بعد از اینکه رمز بگذاری، پنل <b>بدون ورود باز نمی‌شود</b> و نشست ۶ ساعته با کوکی امن نگه داشته می‌شود. (بار اول، تا رمز نگذاشته‌ای، پنل باز است.)", "Once you set a password the panel <b>is never open without login</b>, with a 6-hour session via a secure cookie. (On first run, until you set one, the panel is open.)"], ["<b>هیچ بخشی در پنل متن چت کاربران را نشان نمی‌دهد</b> و جست‌وجوی پیام‌ها وجود ندارد؛ فقط آمار، سهمیه و رویدادهای فنی.", "<b>No part of the panel shows users' chat text</b> and there is no message search — only stats, quotas and technical events."], ["سوپرادمین‌ها فقط با <b>شناسهٔ عددی</b> تعریف می‌شوند (متغیر <code>SUPER_ADMIN_IDS</code> یا تب Config)، نه نام کاربری قابل جعل.", "Super admins are defined by <b>numeric ID</b> only (<code>SUPER_ADMIN_IDS</code> or the Config tab), not by spoofable usernames."], ["توکن‌ها و کلیدها را فقط به‌صورت Secret در Cloudflare نگه دار و در هیچ چت یا مخزن عمومی نگذار.", "Keep tokens and keys only as Cloudflare Secrets and never paste them in chats or public repos."], ["هر زمان خواستی از <b>Config ← Clear history</b> حافظه و آرشیو را برای همیشه پاک کن.", "Anytime, wipe memory and archive permanently from <b>Config → Clear history</b>."]], "tips": [["رمز پنل را قوی انتخاب کن و بعد از اولین ورود حتماً رمز دائمی بگذار.", "Choose a strong panel password and set a permanent one right after your first login."]], "warns": [], "table": null}, {"id": "faq", "icon": "🛠", "tfa": "عیب‌یابی سریع", "ten": "Quick troubleshooting", "lfa": "مشکلات رایج و راه‌حل‌هایشان.", "len": "Common problems and their fixes.", "steps": [], "tips": [], "warns": [], "table": [["ربات در گروه جواب نمی‌دهد", "گروه هنوز تأیید نشده (تب Overview ← Requests) یا ربات در حالت <code>/silent</code> است. اسم «نیکی» را در پیام بیاور یا <code>/alwayson</code> را بزن.", "The group isn't approved yet (Overview → Requests) or the bot is in <code>/silent</code> mode. Mention «Niki» or use <code>/alwayson</code>."], ["لینک مینی‌اپ ساخته نمی‌شود", "آیدی ربات را در Config ← Bot username وارد کن.", "Enter the bot username in Config → Bot username."], ["رمز پنل را فراموش کرده‌ام", "در Cloudflare یک متغیر <code>ADMIN_PANEL_PASSWORD</code> بساز و با همان رمز وارد شو؛ بعد از ورود از Config رمز جدید بگذار.", "Create an <code>ADMIN_PANEL_PASSWORD</code> variable in Cloudflare and sign in with it, then set a new password in Config."], ["ربات خطای هوش مصنوعی می‌دهد", "کلید Gemini تمام شده یا نامعتبر است؛ تب Gemini keys را ببین و کلید جدید اضافه کن.", "A Gemini key is exhausted or invalid; check the Gemini keys tab and add a new one."], ["ارسال همگانی پیش نمی‌رود", "ماموریت در حالت مکث است یا صف طولانی است؛ در Live mission status گزینهٔ Resume یا Run now را بزن.", "The mission is paused or the queue is long; use Resume or Run now in Live mission status."], ["بخشی در مینی‌اپ نیست", "احتمالاً در Features ← Mini App خاموش شده است.", "It's probably switched off in Features → Mini App."]]}];
+const GUIDE_SECTIONS = [{"id": "overview", "icon": "📊", "tfa": "نمای کلی (Overview)", "ten": "Overview", "lfa": "اولین صفحه‌ای که بعد از ورود می‌بینی؛ وضعیت لحظه‌ای ربات و درخواست‌های منتظر تأیید.", "len": "The first screen after login: a live snapshot of your bot and the requests waiting for approval.", "steps": [["کارت‌های بالای صفحه تعداد کاربران، گروه‌های فعال، پیام‌ها، تصاویر و ویس‌های <b>امروز</b> و تعداد درخواست‌های در انتظار را نشان می‌دهند.", "The cards at the top show total users, active groups, and <b>today's</b> messages, images and voice plus the number of pending requests."], ["در جدول <b>درخواست‌ها (Requests)</b> هر گروهی که ربات را اضافه کرده و منتظر فعال‌سازی است دیده می‌شود: شناسه چت، نام گروه، درخواست‌دهنده و زمان.", "The <b>Requests</b> table lists every group that added the bot and waits for activation: chat ID, name, requester and time."], ["با <b>تأیید</b> گروه فعال می‌شود و ربات در آن پاسخ می‌دهد؛ با <b>رد</b> درخواست حذف می‌شود.", "<b>Approve</b> activates the group so the bot starts replying there; <b>Reject</b> removes the request."]], "tips": [["اگر گروهی برای ربات مهم است ولی جواب نمی‌دهد، اول همین‌جا چک کن که تأیید شده باشد.", "If the bot stays silent in a group, check here first that the group has been approved."]], "warns": [], "table": null}, {"id": "groups", "icon": "💬", "tfa": "گروه‌ها (Groups)", "ten": "Groups", "lfa": "مدیریت همهٔ گروه‌های فعال: جست‌وجو، تنظیم محدودیت و تنظیمات اختصاصی هر گروه.", "len": "Manage every active group: search, set limits and tweak per-group settings.", "steps": [["از کادر جست‌وجو با نام یا شناسهٔ گروه، سریع پیدایش کن.", "Use the search box to find a group by name or ID."], ["ستون‌های <b>Limit</b> و <b>Total</b> محدودیت و مصرف کل گروه را نشان می‌دهند.", "The <b>Limit</b> and <b>Total</b> columns show the group's quota and its overall usage."], ["با دکمه‌های هر ردیف می‌توانی محدودیت گروه را ویرایش کنی، پیام مستقیم به گروه بفرستی یا تنظیمات اختصاصی آن را باز کنی.", "The row buttons let you edit the group's limit, send it a direct message or open its dedicated settings."]], "tips": [["محدودیت پیش‌فرض گروه‌های جدید را در تب <b>Config ← Group limits</b> تعیین می‌کنی؛ اینجا فقط استثناها را عوض کن.", "Set the default for new groups in <b>Config → Group limits</b>; only change exceptions here."]], "warns": [], "table": null}, {"id": "users", "icon": "👤", "tfa": "کاربران (Users)", "ten": "Users", "lfa": "فهرست کاربران ربات با میزان مصرف و ابزار مدیریت فردی.", "len": "The list of bot users with their usage and per-user management tools.", "steps": [["جست‌وجو با نام کاربری یا شناسهٔ عددی.", "Search by username or numeric ID."], ["<b>Permanent</b> سهمیهٔ دائمی/بسته‌ای، <b>Today's daily</b> مصرف امروز، <b>Voice today</b> ویس امروز و <b>Invite</b> تعداد دعوت‌ها را نشان می‌دهد.", "<b>Permanent</b> is the lasting/package quota, <b>Today's daily</b> today's usage, <b>Voice today</b> voice usage and <b>Invite</b> the number of invites."], ["هر کاربر چهار ابزار دارد: <b>Profile</b> (مشاهدهٔ مشخصات و مصرف)، <b>Edit</b> (تغییر محدودیت‌ها)، <b>Reward</b> (هدیهٔ سهمیه) و <b>Message</b> (ارسال پیام مستقیم).", "Each user has four tools: <b>Profile</b> (details and usage), <b>Edit</b> (change limits), <b>Reward</b> (gift quota) and <b>Message</b> (direct message)."]], "tips": [["این بخش فقط آمار و سهمیه را نشان می‌دهد؛ متن گفتگوهای کاربران هیچ‌جا در پنل نیست و قابل مشاهده نمی‌باشد.", "This section only shows stats and quota; users' chat text is never available in the panel."]], "warns": [], "table": null}, {"id": "broadcast", "icon": "📢", "tfa": "ارسال همگانی (Broadcast)", "ten": "Broadcast", "lfa": "ارسال پیام، عکس، فایل یا ویس به همه یا بخشی از چت‌ها به‌صورت صف (Mission) و دسته‌ای.", "len": "Send text, photos, files or voice to all or some chats as a queued, batched mission.", "steps": [["<b>Recipient</b> را انتخاب کن: همه، فقط کاربران خصوصی، فقط گروه‌ها یا یک چت مشخص (با شناسه).", "Pick the <b>Recipient</b>: everyone, private users only, groups only, or one specific chat (by ID)."], ["<b>Content type</b> را مشخص کن: متن، تصویر، فایل یا ویس؛ سپس متن/کپشن و در صورت نیاز فایل را بده.", "Choose the <b>Content type</b> — text, image, file or voice — then enter the text/caption and the file if needed."], ["<b>Queue priority</b> ترتیب اجرای ماموریت‌ها را تعیین می‌کند (عدد بزرگ‌تر زودتر).", "<b>Queue priority</b> decides mission order (higher runs sooner)."], ["با <b>Create mission</b> ماموریت ساخته می‌شود. در <b>Live mission status</b> می‌توانی بروزرسانی کنی، یک دسته را همین الان بفرستی (Run now)، مکث/ادامه بدهی یا لغو کنی.", "<b>Create mission</b> queues it. In <b>Live mission status</b> you can refresh, send one batch right now (Run now), pause/resume or cancel."], ["تاریخچهٔ ماموریت‌ها و ارسال‌های کامل‌شده پایین صفحه است.", "Mission history and completed broadcasts are listed at the bottom."]], "tips": [], "warns": [["ارسال همگانی بدون هماهنگی ممکن است کاربران را ناراحت یا ربات را محدود کند. ابتدا روی یک چت مشخص (Single) تست کن.", "Unsolicited mass messages can annoy users or get the bot limited. Test on a single chat first."]], "table": null}, {"id": "apikeys", "icon": "🔑", "tfa": "کلیدهای API (API Keys)", "ten": "API Keys", "lfa": "برای وصل کردن نیکی به سایت یا اپ خودت؛ کلید بساز، محدودیت بگذار و تست کن.", "len": "Connect Niki to your own site or app: create keys, set limits and test them.", "steps": [["در <b>Create new API key</b> کلید بساز. کلید <b>فقط یک بار</b> نمایش داده می‌شود؛ همان لحظه کپی و جای امن ذخیره‌اش کن.", "In <b>Create new API key</b> make a key. It is shown <b>only once</b> — copy and store it safely right away."], ["در <b>Test console</b> کلید را بچسبان و یک درخواست آزمایشی بفرست.", "Paste the key into the <b>Test console</b> and send a test request."], ["در جدول <b>Keys</b> می‌توانی هر کلید را فعال/غیرفعال کنی، لیمیت و تاریخ انقضا بدهی و CORS را روشن/خاموش کنی.", "In the <b>Keys</b> table enable/disable each key, set limits and expiry, and toggle CORS."], ["<b>Users per key</b> کاربران هر کلید و لیمیت اختصاصی‌شان را نشان می‌دهد.", "<b>Users per key</b> shows each key's users and their dedicated limits."], ["دکمهٔ <b>API guide</b> بالای همین تب، مستندات کامل (اندپوینت‌ها، فیلدها، خطاها و نمونه‌کد) را دارد.", "The <b>API guide</b> button at the top of that tab has full docs (endpoints, fields, errors, code samples)."]], "tips": [], "warns": [["کلید API را در کد سمت کاربر (وب‌سایت عمومی) نگذار؛ هر کسی می‌تواند آن را ببیند.", "Never embed an API key in public client-side code; anyone can read it."]], "table": null}, {"id": "geminikeys", "icon": "🧬", "tfa": "کلیدهای Gemini", "ten": "Gemini keys", "lfa": "مدیریت کلیدهای هوش مصنوعی Gemini که ربات با آن‌ها کار می‌کند.", "len": "Manage the Gemini AI keys the bot runs on.", "steps": [["یک کلید رایگان از <b>aistudio.google.com/apikey</b> بگیر و در <b>Add new Gemini key</b> اضافه کن.", "Get a free key at <b>aistudio.google.com/apikey</b> and add it under <b>Add new Gemini key</b>."], ["با <b>Import / Export</b> می‌توانی چند کلید را یک‌جا وارد یا از آن‌ها پشتیبان بگیری.", "Use <b>Import / Export</b> to add several keys at once or back them up."], ["فهرست کلیدها وضعیت هر کدام را نشان می‌دهد؛ کلید خراب یا تمام‌شده را غیرفعال یا حذف کن.", "The list shows each key's status; disable or delete a broken or exhausted one."]], "tips": [["هرچه کلید بیشتری داشته باشی، فشار سهمیه بین کلیدها پخش می‌شود و ربات کمتر به محدودیت می‌خورد.", "More keys spread the quota load, so the bot hits limits less often."]], "warns": [], "table": null}, {"id": "packages", "icon": "📦", "tfa": "بسته‌ها (Packages)", "ten": "Packages", "lfa": "ساخت بستهٔ فروشی/هدیه و فعال‌سازی آن روی هر چت؛ خرید با ستارهٔ تلگرام.", "len": "Create sellable or gift packages and activate them on any chat; purchases use Telegram Stars.", "steps": [["در <b>New package template</b> یک قالب بساز (نام، سهمیهٔ پیام/تصویر، مدت و قیمت). قالب‌ها در <b>Defined templates</b> می‌مانند.", "In <b>New package template</b> create a template (name, message/image quota, duration, price). Templates stay in <b>Defined templates</b>."], ["با <b>Activate on a Chat</b> هر قالب را مستقیم روی یک کاربر یا گروه فعال کن.", "Use <b>Activate on a Chat</b> to apply a template directly to a user or group."], ["<b>Currently active packages</b> همهٔ بسته‌های در حال اجرا را نشان می‌دهد و می‌توانی آن‌ها را ویرایش یا تمدید کنی.", "<b>Currently active packages</b> lists every running package; edit or extend them there."], ["<b>Buyers</b> و <b>Star purchase history</b> خریدهای واقعی کاربران را نشان می‌دهند.", "<b>Buyers</b> and <b>Star purchase history</b> show real user purchases."]], "tips": [["کاربران با دستور <code>/packages</code> بسته‌های قابل خرید را می‌بینند.", "Users see purchasable packages with <code>/packages</code>."]], "warns": [], "table": null}, {"id": "config", "icon": "⚙️", "tfa": "تنظیمات (Config)", "ten": "Config", "lfa": "قلب پنل: محدودیت‌ها، پرامپت‌ها، هویت ربات، امنیت و صدا.", "len": "The heart of the panel: limits, prompts, bot identity, security and voice.", "steps": [], "tips": [["بعد از هر تغییر، دکمهٔ <b>ذخیره (Save)</b> همان کارت را بزن؛ هر کارت جداگانه ذخیره می‌شود.", "Press the card's own <b>Save</b> button after each change; every card saves separately."]], "warns": [["بار اول پنل بدون رمز باز می‌شود. حتماً بعد از راه‌اندازی از همین کارت یک رمز بگذار؛ تا رمز نگذاری هر کسی که آدرس پنل را بداند می‌تواند ربات را کنترل کند. اگر رمز را فراموش کردی، متغیر <code>ADMIN_PANEL_PASSWORD</code> را در Cloudflare بساز و با آن وارد شو.", "The first time, the panel opens without a password. Set one from this card right after setup — until you do, anyone who knows the panel URL can control your bot. If you forget it, create an <code>ADMIN_PANEL_PASSWORD</code> variable in Cloudflare and sign in with it."]], "table": [["📏 New-user limits / 💬 Group limits", "محدودیت‌های پیش‌فرض کاربر جدید و گروه جدید (پیام/تصویر روزانه و کل).", "Default quota for new users and new groups (daily and total messages/images)."], ["🧠 پرامپت‌ها (Default prompts)", "شخصیت پیش‌فرض نیکی در گروه، چت خصوصی و API. خالی بگذاری، پیش‌فرض داخلی استفاده می‌شود.", "Niki's default personality in groups, private chats and the API. Leave empty to use the built-in default."], ["🎉 /start reward · 🔗 Invite reward", "هدیهٔ شروع و پاداش دعوت.", "Welcome gift and invite reward."], ["🔊 Voice", "روشن/خاموش کردن ویس، انتخاب موتور و صداها.", "Turn voice on/off and pick the engine and voices."], ["🧠 Default AI model", "مدل زبانی پیش‌فرض.", "The default language model."], ["🏷️ Bot name · 🤖 Bot username", "نام نمایشی و آیدی ربات (بدون @). برای ساخت لینک دعوت و لینک مینی‌اپ لازم است.", "Display name and bot username (without @). Needed for invite and Mini App links."], ["🔑 Telegram bot token", "جایگزینی توکن ربات از داخل پنل (اولویت با پنل است).", "Override the bot token from the panel (the panel value wins)."], ["👑 Super admins", "شناسهٔ عددی سوپرادمین‌ها. (سوپرادمین‌های متغیر <code>SUPER_ADMIN_IDS</code> همیشه فعال‌اند.)", "Numeric IDs of super admins. (Those in the <code>SUPER_ADMIN_IDS</code> variable are always active.)"], ["🔐 Panel password", "رمز دائمی ورود به پنل.", "The permanent panel login password."], ["🖼 Multi-photo · 📨 Send message · 🌐 Global features", "ارسال چندعکسی، ارسال پیام تکی و کلیدهای سراسری قابلیت‌ها.", "Multi-photo sending, single message sending and global feature switches."], ["🧹 Clear history", "پاک‌سازی دائمی حافظه، آرشیو، لاگ و ... بدون دست‌زدن به کاربران، پرداخت‌ها و تنظیمات.", "Permanently wipe memory, archive, logs and more — users, payments and settings stay untouched."]]}, {"id": "features", "icon": "🧠", "tfa": "قابلیت‌ها (Features)", "ten": "Features", "lfa": "روشن/خاموش کردن امکانات برای مینی‌اپ، چت خصوصی و گروه‌ها، به‌علاوهٔ سقف روزانه و متن خوش‌آمد.", "len": "Switch capabilities on/off for the Mini App, private chats and groups, plus daily caps and welcome texts.", "steps": [["کارت <b>Mini App</b>: هر بخش مینی‌اپ را جدا خاموش/روشن کن. بخش خاموش اصلاً در اپ نمایش داده نمی‌شود.", "<b>Mini App</b> card: toggle each Mini App part. A switched-off part doesn't appear in the app at all."], ["کارت‌های <b>Private</b> و <b>Groups</b>: دستورات و قابلیت‌های هوشمند هر نوع چت را مشخص کن.", "<b>Private</b> and <b>Groups</b> cards: choose which commands and AI features each chat type gets."], ["<b>Daily caps</b> سقف روزانهٔ پیام، تصویر و ویس برای هر چت است.", "<b>Daily caps</b> sets the daily message, image and voice ceiling per chat."], ["<b>Welcome texts</b> پیام خوش‌آمد خصوصی/گروه و <b>Maintenance mode</b> حالت تعمیر است: ربات به همه جز سوپرادمین پیام «در حال به‌روزرسانی» می‌دهد.", "<b>Welcome texts</b> are the private/group greetings; <b>Maintenance mode</b> tells everyone except super admins the bot is being updated."], ["پایین صفحه <b>Per-chat features</b> است: برای یک چت مشخص جست‌وجوی وب، حافظه، امتیازدهی اهمیت، سقف جست‌وجو و زبان را جدا تنظیم کن (<b>null</b> یعنی همان تنظیم سراسری).", "At the bottom, <b>Per-chat features</b> lets you set web search, memory, importance scoring, search cap and language for one chat (<b>null</b> = use the global setting)."]], "tips": [], "warns": [], "table": null}, {"id": "logs", "icon": "📋", "tfa": "لاگ سیستم (Log)", "ten": "System log", "lfa": "ثبت رویدادهای مدیریتی، هشدارها و خطاها برای عیب‌یابی.", "len": "Admin events, warnings and errors for troubleshooting.", "steps": [["سطح را انتخاب کن: <b>Admin</b> (کارهای مدیریتی)، <b>Warn</b>، <b>Error</b> یا <b>Info</b>.", "Pick a level: <b>Admin</b> (management actions), <b>Warn</b>, <b>Error</b> or <b>Info</b>."], ["برای دیدن لاگ یک چت مشخص، شناسهٔ آن را وارد کن و <b>Load</b> بزن.", "Enter a chat ID to see its log only, then press <b>Load</b>."], ["<b>Clear</b> لاگ را پاک می‌کند (بازگشت‌ناپذیر).", "<b>Clear</b> wipes the log (irreversible)."]], "tips": [["لاگ‌ها متن پیام کاربران را ذخیره نمی‌کنند؛ فقط نوع رویداد و جزئیات فنی.", "Logs never store users' message text — only event types and technical details."]], "warns": [], "table": null}, {"id": "commands", "icon": "⌨️", "tfa": "دستورات ربات", "ten": "Bot commands", "lfa": "برگهٔ تقلب دستورات برای کاربران و ادمین‌های گروه.", "len": "A cheat sheet of commands for users and group admins.", "steps": [], "tips": [], "warns": [], "table": [["<code>/start</code> · <code>/help</code>", "شروع و راهنمای ربات (در چت خصوصی و گروه).", "Start and help (private and group)."], ["<code>/app</code>", "باز کردن مینی‌اپ (فقط چت خصوصی).", "Open the Mini App (private chat only)."], ["<code>/lang fa|en</code>", "زبان پیام‌های ثابت ربات.", "Language of the bot's fixed messages."], ["<code>/invite</code> · <code>/mylink</code>", "لینک دعوت شخصی و پاداش دعوت.", "Your personal invite link and reward."], ["<code>/mylimit</code> · <code>/myperm</code> · <code>/packages</code>", "محدودیت من، سطح دسترسی من و بسته‌های قابل خرید.", "My limits, my permission level and purchasable packages."], ["<code>/init</code>", "ثبت و درخواست فعال‌سازی گروه (توسط سازندهٔ گروه).", "Register a group and request activation (by the group owner)."], ["<code>/alwayson</code> · <code>/silent</code> · <code>/lockdown</code>", "ادمین گروه: پاسخ به همهٔ پیام‌ها، سکوت ربات، قفل.", "Group admin: reply to everything, mute the bot, lockdown."], ["<code>/promote @u</code> · <code>/demote @u</code> · <code>/admins</code>", "مدیریت ادمین‌های گروه (رهبر).", "Manage group admins (leader)."], ["<code>/mute @u</code> · <code>/ban @u</code> · <code>/unmute</code> · <code>/unban</code>", "کنترل اعضا؛ سوپرادمین‌ها قابل mute/ban نیستند.", "Member control; super admins can't be muted or banned."], ["<code>/say متن</code> · <code>/delete n</code> · <code>/purge n</code> · <code>/pin</code> · <code>/unpin</code>", "ارسال از طرف ربات، حذف و پین پیام.", "Send as the bot, delete and pin messages."], ["<code>/mode 1-5</code> · <code>/reset</code> · <code>/memstats</code> · <code>/memclear</code>", "شخصیت، بازنشانی و حافظهٔ بلندمدت.", "Persona, reset and long-term memory."], ["<code>/histclear</code>", "پاک‌سازی حافظه و آرشیو همین چت.", "Wipe this chat's memory and archive."]]}, {"id": "security", "icon": "🔐", "tfa": "امنیت و حریم خصوصی", "ten": "Security & privacy", "lfa": "چطور پنل و پیام‌های کاربران امن می‌مانند.", "len": "How the panel and users' messages stay safe.", "steps": [["بعد از اینکه رمز بگذاری، پنل <b>بدون ورود باز نمی‌شود</b> و نشست ۶ ساعته با کوکی امن نگه داشته می‌شود. (بار اول، تا رمز نگذاشته‌ای، پنل باز است.)", "Once you set a password the panel <b>is never open without login</b>, with a 6-hour session via a secure cookie. (On first run, until you set one, the panel is open.)"], ["<b>هیچ بخشی در پنل متن چت کاربران را نشان نمی‌دهد</b> و جست‌وجوی پیام‌ها وجود ندارد؛ فقط آمار، سهمیه و رویدادهای فنی.", "<b>No part of the panel shows users' chat text</b> and there is no message search — only stats, quotas and technical events."], ["سوپرادمین‌ها فقط با <b>شناسهٔ عددی</b> تعریف می‌شوند (متغیر <code>SUPER_ADMIN_IDS</code> یا تب Config)، نه نام کاربری قابل جعل.", "Super admins are defined by <b>numeric ID</b> only (<code>SUPER_ADMIN_IDS</code> or the Config tab), not by spoofable usernames."], ["توکن‌ها و کلیدها را فقط به‌صورت Secret در Cloudflare نگه دار و در هیچ چت یا مخزن عمومی نگذار.", "Keep tokens and keys only as Cloudflare Secrets and never paste them in chats or public repos."], ["هر زمان خواستی از <b>Config ← Clear history</b> حافظه و آرشیو را برای همیشه پاک کن.", "Anytime, wipe memory and archive permanently from <b>Config → Clear history</b>."]], "tips": [["رمز پنل را قوی انتخاب کن و بعد از اولین ورود حتماً رمز دائمی بگذار.", "Choose a strong panel password and set a permanent one right after your first login."]], "warns": [], "table": null}, {"id": "faq", "icon": "🛠", "tfa": "عیب‌یابی سریع", "ten": "Quick troubleshooting", "lfa": "مشکلات رایج و راه‌حل‌هایشان.", "len": "Common problems and their fixes.", "steps": [], "tips": [], "warns": [], "table": [["ربات در گروه جواب نمی‌دهد", "گروه هنوز تأیید نشده (تب Overview ← Requests) یا ربات در حالت <code>/silent</code> است. اسم «نیکی» را در پیام بیاور یا <code>/alwayson</code> را بزن.", "The group isn't approved yet (Overview → Requests) or the bot is in <code>/silent</code> mode. Mention «Niki» or use <code>/alwayson</code>."], ["لینک مینی‌اپ ساخته نمی‌شود", "آیدی ربات را در Config ← Bot username وارد کن.", "Enter the bot username in Config → Bot username."], ["رمز پنل را فراموش کرده‌ام", "در Cloudflare یک متغیر <code>ADMIN_PANEL_PASSWORD</code> بساز و با همان رمز وارد شو؛ بعد از ورود از Config رمز جدید بگذار.", "Create an <code>ADMIN_PANEL_PASSWORD</code> variable in Cloudflare and sign in with it, then set a new password in Config."], ["ربات خطای هوش مصنوعی می‌دهد", "کلید Gemini تمام شده یا نامعتبر است؛ تب Gemini keys را ببین و کلید جدید اضافه کن.", "A Gemini key is exhausted or invalid; check the Gemini keys tab and add a new one."], ["ارسال همگانی پیش نمی‌رود", "ماموریت در حالت مکث است یا صف طولانی است؛ در Live mission status گزینهٔ Resume یا Run now را بزن.", "The mission is paused or the queue is long; use Resume or Run now in Live mission status."], ["بخشی در مینی‌اپ نیست", "احتمالاً در Features ← Mini App خاموش شده است.", "It's probably switched off in Features → Mini App."]]}];
 const GUIDE_MINI_DESC = {
   miniAppChat:      ["گفتگوی معمولی با نیکی؛ همان چت تلگرام ولی گرافیکی و همگام.", "Chat with Niki — the same conversation as Telegram, in a graphical view."],
   miniAppProgrammer:["دستیار برنامه‌نویسی با کدهای رنگی و توضیح خطا.", "A coding assistant with highlighted code and error explanations."],
@@ -7158,7 +7308,7 @@ function buildAdminHtml(data) {
   return `<!DOCTYPE html>
 <html lang="en" dir="ltr"><head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Niki Panel · v0.5.0-beta</title>
+<title>Niki Panel · v1.0.0</title>
 <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;600;700&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#0d0f14;--s:#151820;--s2:#1c2030;--b:#252a3a;--a:#7c6ef7;--a2:#56cfb2;--danger:#f05d7a;--ok:#52c98a;--warn:#f0a050;--success:#52c98a;--t:#e4e8f5;--t2:#8891aa;}
@@ -7303,7 +7453,7 @@ select.dd{display:none;}
 </style></head>
 <body>
 <div id="app">
-<header><div class="logo"><div class="logo-icon">🤖</div><div><h1>Niki Panel</h1><span>v0.5.0-beta</span></div></div>
+<header><div class="logo"><div class="logo-icon">🤖</div><div><h1>Niki Panel</h1><span>v1.0.0</span></div></div>
 <div style="display:flex;align-items:center;gap:10px"><span id="lu" style="font-size:11px;color:var(--t2)"></span><button class="rbtn" id="langToggleBtn" onclick="toggleAdminLang()">🌐 FA</button><button class="rbtn" onclick="location.reload()">🔄</button></div></header>
 
 ${(()=>{
@@ -7427,16 +7577,20 @@ ${(()=>{
 ${setup && (!setup.hasToken||!setup.hasUsername||!setup.hasGemini) ? `
 <div class="mo" id="setupModal"><div class="md apiguide" style="max-width:560px">
   <h3 data-en="🚀 Let's get your bot running" data-fa="🚀 بیا ربات را راه‌اندازی کنیم">🚀 Let's get your bot running</h3>
-  <div class="gl-en"><p>Three things are needed before the bot can answer: a <b>Telegram bot token</b>, the <b>bot username</b> and a <b>Gemini API key</b>. Everything is checked live before it is saved, and the Telegram webhook is registered for you.</p></div>
-  <div class="gl-fa" dir="rtl"><p>برای اینکه ربات جواب بدهد سه چیز لازم است: <b>توکن ربات تلگرام</b>، <b>آیدی ربات</b> و <b>کلید Gemini</b>. همه‌چیز قبل از ذخیره زنده بررسی می‌شود و وبهوک تلگرام هم خودکار ثبت می‌شود.</p></div>
+  <div class="gl-en"><p>Two things are needed before the bot can answer: a <b>Telegram bot token</b> and a <b>Gemini API key</b> — then pick the <b>language the bot speaks</b>. Everything is checked live before it is saved, and the Telegram webhook is registered for you.</p></div>
+  <div class="gl-fa" dir="rtl"><p>برای اینکه ربات جواب بدهد دو چیز لازم است: <b>توکن ربات تلگرام</b> و <b>کلید Gemini</b>؛ و <b>زبان صحبت ربات</b> را هم انتخاب کن. همه‌چیز قبل از ذخیره زنده بررسی می‌شود و وبهوک تلگرام هم خودکار ثبت می‌شود.</p></div>
   <div class="fg"><label data-en="1) Telegram bot token" data-fa="۱) توکن ربات تلگرام">1) Telegram bot token</label>
     <input type="password" id="su-token" placeholder="${setup.hasToken?'✅ already set — leave blank to keep':'123456789:AAExampleTokenHere'}" dir="ltr" autocomplete="off">
     <div class="gl-en" style="font-size:11px;color:var(--t2);margin-top:4px">Open <b>@BotFather</b> in Telegram → send <code>/newbot</code> → copy the token it gives you.</div>
     <div class="gl-fa" dir="rtl" style="font-size:11px;color:var(--t2);margin-top:4px">در تلگرام <b>@BotFather</b> را باز کن ← <code>/newbot</code> بفرست ← توکنی که می‌دهد را کپی کن.</div></div>
-  <div class="fg"><label data-en="2) Bot username (without @)" data-fa="۲) آیدی ربات (بدون @)">2) Bot username (without @)</label>
-    <input type="text" id="su-username" value="${escHtml(gc.botUsername||'')}" placeholder="e.g. my_niki_bot" dir="ltr">
-    <div class="gl-en" style="font-size:11px;color:var(--t2);margin-top:4px">Leave it empty and it is detected from the token automatically.</div>
-    <div class="gl-fa" dir="rtl" style="font-size:11px;color:var(--t2);margin-top:4px">خالی بگذاری، خودکار از روی توکن تشخیص داده می‌شود.</div></div>
+  <div class="fg"><label data-en="2) Language the bot speaks" data-fa="۲) زبان صحبت ربات">2) Language the bot speaks</label>
+    <select id="su-lang" style="width:100%;background:var(--s2);border:1px solid var(--b);border-radius:8px;padding:9px 11px;color:var(--t);font-family:inherit;font-size:13px;outline:none">
+      <option value="auto" ${(gc.replyLang||"auto")==="auto"?"selected":""}>🌐 Auto — match each user / خودکار — هم‌زبان با کاربر</option>
+      <option value="en" ${gc.replyLang==="en"?"selected":""}>🇬🇧 English</option>
+      <option value="fa" ${gc.replyLang==="fa"?"selected":""}>🇮🇷 فارسی (Persian)</option>
+    </select>
+    <div class="gl-en" style="font-size:11px;color:var(--t2);margin-top:4px">Auto (recommended): Niki answers in whatever language the user writes. The persona prompt adapts to your choice. The bot username is detected from the token automatically.</div>
+    <div class="gl-fa" dir="rtl" style="font-size:11px;color:var(--t2);margin-top:4px">خودکار (پیشنهادی): نیکی به همان زبانی که کاربر می‌نویسد جواب می‌دهد و پرامپت شخصیت با انتخاب تو هماهنگ می‌شود. آیدی ربات خودکار از روی توکن تشخیص داده می‌شود.</div></div>
   <div class="fg"><label data-en="Bot name (optional)" data-fa="اسم ربات (اختیاری)">Bot name (optional)</label>
     <input type="text" id="su-botName" maxlength="40" value="${escHtml(gc.botName||'')}" placeholder="Niki">
     <div class="gl-en" style="font-size:11px;color:var(--t2);margin-top:4px">The name your users see in the Mini App and greetings. Empty = “Niki”. You can change it later in ⚙️ Config.</div>
@@ -7913,6 +8067,13 @@ echo $data["ok"] ? $data["reply"] : $data["error"];</pre></div>
         <option value="fa" ${gc.defaultLang==="fa"?"selected":""}>Persian</option>
       </select></div>
     <div style="font-size:10px;color:var(--t2);margin-top:4px">Language of the bot's fixed messages (help, limits, errors). Each chat/group can override this separately from the Features tab.</div>
+    <div class="cr"><div class="cl">🗣 AI reply language</div>
+      <select class="ci" id="cf-replyLang">
+        <option value="auto" ${(gc.replyLang||"auto")==="auto"?"selected":""}>Auto (match the user)</option>
+        <option value="en" ${gc.replyLang==="en"?"selected":""}>English</option>
+        <option value="fa" ${gc.replyLang==="fa"?"selected":""}>Persian</option>
+      </select></div>
+    <div style="font-size:10px;color:var(--t2);margin-top:4px">Language the AI answers in. Auto = it replies in whatever language each user writes. The persona prompt adapts automatically.</div>
     <button class="csave" onclick="saveConfig('globalFeatures')">💾 Save</button>
   </div>
 </div></div></div>
@@ -8492,6 +8653,7 @@ async function saveConfig(sec){
     globalSearchLimit:+document.getElementById('cf-globalSearchLimit').value,
     globalGrpSearchLimit:+document.getElementById('cf-globalGrpSearchLimit').value,
     defaultLang:document.getElementById('cf-defaultLang').value,
+    replyLang:document.getElementById('cf-replyLang').value,
   };
   const r=await api('save_global_config',{section:sec,...b});
   if(r.ok){toast('✅ Saved','ok');if(sec==='password'||sec==='primaryToken')setTimeout(()=>location.reload(),1200);}else toast('❌ '+r.error,'err');
@@ -8800,18 +8962,19 @@ async function runSetup(){
   const fa=adminLang==='fa';
   const token=document.getElementById('su-token').value.trim();
   const geminiKey=document.getElementById('su-gemini').value.trim();
-  const username=document.getElementById('su-username').value.trim();
+  const replyLang=(document.getElementById('su-lang')||{value:'auto'}).value;
   const pwEl=document.getElementById('su-password');const password=pwEl?pwEl.value:'';
   const out=document.getElementById('su-out');out.style.display='block';
   if(SETUP_NEEDS.token&&!token){out.textContent=fa?'❌ توکن ربات تلگرام الزامی است.':'❌ The Telegram bot token is required.';return;}
   if(SETUP_NEEDS.gemini&&!geminiKey){out.textContent=fa?'❌ کلید Gemini الزامی است.':'❌ The Gemini API key is required.';return;}
   const btn=document.getElementById('su-go');btn.disabled=true;out.textContent=fa?'⏳ در حال بررسی و ذخیره…':'⏳ Checking and saving…';
   const botName=(document.getElementById('su-botName')||{value:''}).value.trim();
-  const r=await api('setup_run',{token,username,geminiKey,password,botName});
+  const r=await api('setup_run',{token,geminiKey,password,botName,replyLang});
   btn.disabled=false;
   if(!r.ok){out.textContent='❌ '+(r.error||'Error');return;}
   const L=[];
   L.push((fa?'✅ ربات: @':'✅ Bot: @')+r.username);
+  L.push((fa?'✅ زبان ربات: ':'✅ Bot language: ')+(replyLang==='fa'?(fa?'فارسی':'Persian'):replyLang==='en'?(fa?'انگلیسی':'English'):(fa?'خودکار':'Auto')));
   L.push(r.webhook&&r.webhook.ok?(fa?'✅ وبهوک تلگرام ثبت شد':'✅ Telegram webhook registered'):(fa?'⚠️ وبهوک ثبت نشد: ':'⚠️ Webhook not registered: ')+((r.webhook&&r.webhook.description)||''));
   if(r.gemini==='ok')L.push(fa?'✅ کلید Gemini کار می‌کند':'✅ Gemini key works');
   if(r.gemini==='quota')L.push(fa?'⚠️ کلید Gemini ذخیره شد ولی سهمیه‌اش فعلاً پر است':'⚠️ Gemini key saved but its quota is currently exhausted');
@@ -11917,7 +12080,10 @@ async function handleMiniApp(request, env, url) {
     const botN = gc.botName || (uiLang === "fa" ? "نیکی" : "Niki");
     const callLangName = String(body.lang || "").replace(/[\r\n\t]+/g, " ").trim().slice(0, 40);
     const isTutor = !!thread && thread.skill === "tutor";
-    let sys = `You are ${botN}, a warm, friendly and witty AI voice assistant. The user's name is ${fullName}. Their app language is ${uiLang === "fa" ? "Persian (Farsi)" : "English"}.`;
+    const _privPrompt = (await getGC(db)).defaultPrivatePrompt1?.trim() || "";
+    let sys = _privPrompt
+      ? `${_privPrompt}\n\nYou are in a live voice call. Keep spoken replies short. The user's name is ${fullName}. App language: ${uiLang === "fa" ? "Persian (Farsi)" : "English"}.`
+      : `You are ${botN}, a warm, friendly and witty AI voice assistant. The user's name is ${fullName}. Their app language is ${uiLang === "fa" ? "Persian (Farsi)" : "English"}.`;
     let ltCtx = null;
     if (isTutor) {
       // Language-tutor call: full memory-driven teaching prompt (profile, Leitner reviews, mistakes, facts, mood).
@@ -18953,7 +19119,7 @@ function buildAdminLoginHtml() {
   return `<!DOCTYPE html>
 <html lang="en" dir="ltr"><head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Niki Panel · v0.5.0-beta</title>
+<title>Niki Panel · v1.0.0</title>
 <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;600;700&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#0d0f14;--s:#151820;--s2:#1c2030;--b:#252a3a;--a:#7c6ef7;--t:#e4e8f5;--danger:#f05d7a;--t2:#8891aa;}
@@ -19380,7 +19546,7 @@ async function handleAdmin(request, env, url, hadEnvBotToken) {
         if (!d.ok) return jr({ok:false,error:"Telegram rejected the token: "+(d.description||r.status)});
         me = d.result;
       } catch (e) { return jr({ok:false,error:"Could not reach Telegram: "+e.message}); }
-      const uname = String(body.username||"").trim().replace(/^@/,"") || me?.username || "";
+      const uname = String(body.username||"").trim().replace(/^@/,"") || me?.username || "";   // auto-detected from the token
       const gKey = String(body.geminiKey||"").trim();
       let geminiNote = null;
       if (gKey) {
@@ -19402,6 +19568,10 @@ async function handleAdmin(request, env, url, hadEnvBotToken) {
       await setBotConfig(db, patch);
       const cur = await getGC(db);
       const upd = { ...cur, botUsername: uname };
+      if (["auto","en","fa"].includes(body.replyLang)) {
+        upd.replyLang = body.replyLang;
+        if (body.replyLang !== "auto") upd.defaultLang = body.replyLang;   // fixed bot messages follow a forced language
+      }
       if (pw) upd.adminPanelPassword = await hashPassword(pw);
       if (body.botName !== undefined) upd.botName = String(body.botName || "").replace(/[<>\u0000]/g, "").trim().slice(0, 40);
       await setGC(db, upd);
@@ -19596,6 +19766,7 @@ async function handleAdmin(request, env, url, hadEnvBotToken) {
         if (Array.isArray(body[f])) u[f] = body[f].map(String).filter(k => CHAT_SWITCH_KEYS.has(k));
       }
       if ("defaultLang" in body && C.SUPPORTED_LANGS.includes(body.defaultLang)) u.defaultLang=body.defaultLang;
+      if ("replyLang" in body && ["auto","en","fa"].includes(body.replyLang)) u.replyLang=body.replyLang;
       if ("disabledModes" in body && Array.isArray(body.disabledModes)) u.disabledModes=body.disabledModes.map(Number).filter(x => [2,3,4,5].includes(x));
       if ("botUsername" in body) u.botUsername=String(body.botUsername||"").trim().replace(/^@/,"");
       if ("adminPanelPassword" in body) u.adminPanelPassword = body.adminPanelPassword ? await hashPassword(String(body.adminPanelPassword)) : "";
