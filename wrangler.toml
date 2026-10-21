@@ -1,0 +1,24 @@
+name = "niki-bot"
+main = "bot.js"
+compatibility_date = "2025-01-01"
+
+# Workers AI (image generation, speech-to-text)
+[ai]
+binding = "AI"
+
+[[d1_databases]]
+binding = "NIKI_DB"
+database_name = "niki-db"
+database_id = "PASTE_D1_DATABASE_ID"
+
+[[kv_namespaces]]
+binding = "NIKI_KV"
+id = "PASTE_KV_NAMESPACE_ID"
+
+# Cron heartbeat — broadcasts, scheduled jobs (runs every minute)
+[triggers]
+crons = ["* * * * *"]
+
+[vars]
+# Comma-separated numeric Telegram IDs of the bot owner(s)
+SUPER_ADMIN_IDS = "123456789"
