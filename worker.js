@@ -545,7 +545,7 @@ const BASE_FUNCTION_TOOLS = [{
     },
   }, {
     name: "create_quiz",
-    description: "Create an interactive quiz that opens inside Niki's Telegram Mini App (a graphical web-app view inside Telegram, works fine in groups too — everyone in the chat can open and play it via the 'Play Quiz' button, which deep-links straight into that quiz, and there's a shared leaderboard). Call this when the user asks for a quiz/test/trivia/کوییز/آزمون/مسابقه on any topic, e.g. 'یه کوییز درباره تاریخ ایران بساز', 'quiz me on JavaScript', 'یه آزمون ۵ سوالی بده'. For general trivia/knowledge topics, plain multiple_choice items are fine. BUT if the topic is learning a human language (especially English — 'کوییز انگلیسی', 'quiz me on English', vocab/grammar practice, 'امتحان املا بگیر', 'جمله‌سازی') build a richer, Duolingo-style lesson instead: split the items across the 4 sections (grammar, vocabulary, conversation, test) using a MIX of item types (multiple_choice, fill_blank, word_bank, pronunciation, spelling, sentence_construction) — don't make it all multiple_choice. If the user specifically asks for an املا (dictation/spelling) test, use itemType 'spelling' for most/all items; if they ask for جمله‌سازی (sentence-building/composition practice), use 'sentence_construction'. Note speech-to-text (pronunciation) works in any language, but the 🔊 listen button (audioText, also used by spelling) only works in English — spelling items should generally be English content since they depend on that listen button. sentence_construction is graded by AI (checks grammar + correct use of the target word), so it works in any language.\n\nFor a PROGRAMMING language quiz (e.g. 'quiz me on Python', 'یه کوییز از جاوااسکریپت بساز'), use multiple_choice (conceptual/output-prediction questions), fill_blank (a code line with one token/keyword missing), and word_bank (scrambled lines/tokens of a snippet to reorder) — never use pronunciation or spelling for code (no audioText either, there's nothing to pronounce). sentence_construction repurposes naturally here too: put a short coding task in `question` (e.g. 'Write a function that reverses a string') and the concept/requirement it must satisfy in `answer` — the AI grader checks the code is correct and satisfies it, not exact wording.\n\nWrite 6-16 items total. Write everything (title, questions, options, answers, explanations) in the SAME language the user is chatting in — EXCEPT audioText, which must always be plain English (the voice engine only speaks English), so only include audioText for English-language quizzes/items. After calling this, you'll also get a normal short text reply — briefly tell the user their quiz is ready and they can tap the button below to play it.",
+    description: "Create an interactive quiz that opens inside the bot's Telegram Mini App (a graphical web-app view inside Telegram, works fine in groups too — everyone in the chat can open and play it via the 'Play Quiz' button, which deep-links straight into that quiz, and there's a shared leaderboard). Call this when the user asks for a quiz/test/trivia/کوییز/آزمون/مسابقه on any topic, e.g. 'یه کوییز درباره تاریخ ایران بساز', 'quiz me on JavaScript', 'یه آزمون ۵ سوالی بده'. For general trivia/knowledge topics, plain multiple_choice items are fine. BUT if the topic is learning a human language (especially English — 'کوییز انگلیسی', 'quiz me on English', vocab/grammar practice, 'امتحان املا بگیر', 'جمله‌سازی') build a richer, Duolingo-style lesson instead: split the items across the 4 sections (grammar, vocabulary, conversation, test) using a MIX of item types (multiple_choice, fill_blank, word_bank, pronunciation, spelling, sentence_construction) — don't make it all multiple_choice. If the user specifically asks for an املا (dictation/spelling) test, use itemType 'spelling' for most/all items; if they ask for جمله‌سازی (sentence-building/composition practice), use 'sentence_construction'. Note speech-to-text (pronunciation) works in any language, but the 🔊 listen button (audioText, also used by spelling) only works in English — spelling items should generally be English content since they depend on that listen button. sentence_construction is graded by AI (checks grammar + correct use of the target word), so it works in any language.\n\nFor a PROGRAMMING language quiz (e.g. 'quiz me on Python', 'یه کوییز از جاوااسکریپت بساز'), use multiple_choice (conceptual/output-prediction questions), fill_blank (a code line with one token/keyword missing), and word_bank (scrambled lines/tokens of a snippet to reorder) — never use pronunciation or spelling for code (no audioText either, there's nothing to pronounce). sentence_construction repurposes naturally here too: put a short coding task in `question` (e.g. 'Write a function that reverses a string') and the concept/requirement it must satisfy in `answer` — the AI grader checks the code is correct and satisfies it, not exact wording.\n\nWrite 6-16 items total. Write everything (title, questions, options, answers, explanations) in the SAME language the user is chatting in — EXCEPT audioText, which must always be plain English (the voice engine only speaks English), so only include audioText for English-language quizzes/items. After calling this, you'll also get a normal short text reply — briefly tell the user their quiz is ready and they can tap the button below to play it.",
     parameters: {
       type: "OBJECT",
       properties: {
@@ -4389,7 +4389,7 @@ async function shortTermMemorySnippet(env, db, chatId, maxItems=C.SHORT_MEM_ITEM
   const items = (rows.results||[])
     .reverse()
     .map(r => {
-      const who = r.role === "model" ? "نیکی" : `@${r.username||"user"}`;
+      const who = r.role === "model" ? "Assistant" : `@${r.username||"user"}`; // neutral label — never leak a fixed bot name into a custom persona
       const txt = (r.content||"").slice(0, 120).replace(/\n+/g," ");
       return `${who}: ${txt}`;
     });
@@ -5584,11 +5584,12 @@ function _parseGeminiParts(parts) {
 async function _callGeminiKey(km, name, key, payload, timeout, useWebSearch=false) {
   const maxR  = useWebSearch ? C.MAX_RETRIES_SEARCH : C.MAX_RETRIES;
   const rMs   = useWebSearch ? C.RETRY_MS_SEARCH    : C.RETRY_MS;
+  let pl = payload, leaned = false;
   for (let r = 1; r <= maxR; r++) {
     try {
       const res  = await fetchWithTimeout(
         geminiUrl(key, km.modelFor(name)),
-        { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(payload) },
+        { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(pl) },
         timeout
       );
       const body = await res.text();
@@ -5596,7 +5597,17 @@ async function _callGeminiKey(km, name, key, payload, timeout, useWebSearch=fals
       if (!res.ok) {
         if (res.status === 429)                          { km.fail(name); return { err:"rate_limited", status:429 }; }
         if ([500,503].includes(res.status) && r<maxR)     { await sleep(rMs*r); continue; }
-        km.fail(name); return { err:`HTTP ${res.status}` };
+        // Search requests are the picky ones: some model/tool combos answer 400 when extra
+        // generationConfig fields (thinkingConfig, topK, …) ride along with googleSearch.
+        // Retry once, same key, with a lean config before giving up.
+        if (res.status === 400 && useWebSearch && !leaned) {
+          pl = { contents: payload.contents, tools: payload.tools, systemInstruction: payload.systemInstruction,
+                 generationConfig: { maxOutputTokens: payload.generationConfig?.maxOutputTokens } };
+          leaned = true; r--; continue;
+        }
+        // keep the API's own error message (key redacted) so Admin → Logs shows the REAL cause
+        const why = String(body).replace(/AIza[0-9A-Za-z_-]{20,}/g, "AIza…").replace(/\s+/g, " ").slice(0, 300);
+        km.fail(name); return { err:`HTTP ${res.status}: ${why}`, status: res.status };
       }
 
       let parsed;
@@ -6272,7 +6283,7 @@ class VoiceGen {
     const form = new FormData();
     form.append("chat_id", String(chatId));
     form.append("audio", new Blob([buffer], {type:mimeType}), `niki.${ext}`);
-    form.append("title", "Niki");
+    form.append("title", (_gcCache && _gcCache.botName) || "Niki");
     // Without an explicit duration, Telegram was showing "0:00" on the
     // audio bubble — it doesn't reliably probe the actual file for this.
     const durationSec = ext === "mp3" ? estimateMp3DurationSeconds(buffer) : ext === "wav" ? wavDurationSeconds(buffer) : null;
@@ -6695,7 +6706,7 @@ ${_toolsBlock("این ربات")}`.trim();
 - Be friendly, clear and helpful. Keep replies short unless the user asks for detail.
 - Write ONLY your message — no action descriptions in parentheses.
 - Be honest: if you don't know something, say so.${_codeRules}${nameHint}${wsHint}
-${_toolsBlock("نیکی")}
+${_toolsBlock(_triggerLabel())}
 
 IMAGE RULES: Nothing explicit. Call the image function EVERY time the user asks for an image.`.trim();
 
@@ -8476,7 +8487,7 @@ api('all_chat_packages',{}).then(r=>{
 
 async function disablePassword(){
   const r=await api('save_global_config',{section:'password',adminPanelPassword:''});
-  if(r.ok){toast('🚫 Password disabled','ok');setTimeout(()=>location.reload(),1000);}else toast('❌ '+r.error,'err');
+  if(r.ok){toast('🚫 Password disabled','ok');setTimeout(reloadHere,1000);}else toast('❌ '+r.error,'err');
 }
 
 async function loadLogs(){
@@ -8508,7 +8519,19 @@ function tab(n,b){
   document.querySelectorAll('.tc').forEach(x=>x.classList.remove('active'));
   document.getElementById('tc-'+n).classList.add('active');
   b.classList.add('active');
+  try{sessionStorage.setItem('nikiTab',n);}catch(e){}
 }
+// reload that keeps the current tab and scroll position (used after Save buttons)
+function reloadHere(){try{sessionStorage.setItem('nikiScroll',String(window.scrollY||0));}catch(e){}location.reload();}
+(function(){try{
+  var n=sessionStorage.getItem('nikiTab');
+  if(n&&n!=='overview'&&document.getElementById('tc-'+n)){
+    var btn=null;document.querySelectorAll('.tab').forEach(function(x){if((x.getAttribute('onclick')||'').indexOf("tab('"+n+"'")===0)btn=x;});
+    if(btn)tab(n,btn);
+  }
+  var y=parseInt(sessionStorage.getItem('nikiScroll')||'0',10);
+  if(y>0){sessionStorage.removeItem('nikiScroll');setTimeout(function(){window.scrollTo(0,y);},60);}
+}catch(e){}})();
 
 function toast(m,t='',dur=3000){const el=document.getElementById('toast');el.textContent=trText(m);el.className='show '+t;setTimeout(()=>el.className='',dur);}
 function daysLeftOf(dateStr){return Math.max(0,Math.ceil((new Date(dateStr).getTime()-Date.now())/86400000));}
@@ -8636,12 +8659,12 @@ async function saveEdit(){
   const id=document.getElementById('eu-id').value;
   const notify=document.getElementById('eu-notify').checked;
   const r=await api('set_user_limits',{userId:id,msgLimit:+document.getElementById('eu-ml').value,imgLimit:+document.getElementById('eu-il').value,dailyMsgLimit:+document.getElementById('eu-dml').value,dailyImgLimit:+document.getElementById('eu-dil').value,bonusMsg:+document.getElementById('eu-bm').value,bonusImg:+document.getElementById('eu-bi').value,voiceLimit:+document.getElementById('eu-vl').value,dailyVoiceLimit:+document.getElementById('eu-dvl').value,bonusVoice:+document.getElementById('eu-bv').value,notify});
-  if(r.ok){toast('✅ Saved','ok');closeModal('editModal');setTimeout(()=>location.reload(),1000);}else toast('❌ '+r.error,'err');
+  if(r.ok){toast('✅ Saved','ok');closeModal('editModal');setTimeout(reloadHere,1000);}else toast('❌ '+r.error,'err');
 }
 function openReward(u){document.getElementById('rw-id').value=u.user_id;document.getElementById('rw-user').value=u.username;openModal('rewardModal');}
 async function saveReward(){
   const r=await api('grant_reward',{userId:document.getElementById('rw-id').value,bonusMsg:+document.getElementById('rw-bm').value,bonusImg:+document.getElementById('rw-bi').value,note:document.getElementById('rw-note').value});
-  if(r.ok){toast('🎁 Granted','ok');closeModal('rewardModal');setTimeout(()=>location.reload(),1000);}else toast('❌ '+r.error,'err');
+  if(r.ok){toast('🎁 Granted','ok');closeModal('rewardModal');setTimeout(reloadHere,1000);}else toast('❌ '+r.error,'err');
 }
 function dmFriendlyError(err){
   const e=(err||'').toLowerCase();
@@ -8682,12 +8705,12 @@ function editGroup(id){
 async function saveGEdit(){
   const id=document.getElementById('ge-id').value;
   const r=await api('set_group_limits',{chatId:id,msgLimit:+document.getElementById('ge-ml').value,imgLimit:+document.getElementById('ge-il').value,dailyMsg:+document.getElementById('ge-dml').value,dailyImg:+document.getElementById('ge-dil').value,voiceLimit:+document.getElementById('ge-vl').value,dailyVoice:+document.getElementById('ge-dvl').value,groupPrompt1:document.getElementById('ge-gp1').value,groupPrompt2:document.getElementById('ge-gp2').value});
-  if(r.ok){toast('✅ Saved','ok');closeModal('gEditModal');setTimeout(()=>location.reload(),1000);}else toast('❌ '+r.error,'err');
+  if(r.ok){toast('✅ Saved','ok');closeModal('gEditModal');setTimeout(reloadHere,1000);}else toast('❌ '+r.error,'err');
 }
-async function approveGroup(chatId,name,uid){if(!confirm('Confirm?'))return;const r=await api('approve_group',{chatId,groupName:name,userId:uid});if(r.ok){toast('✅ Approved','ok');setTimeout(()=>location.reload(),800);}else toast('❌ '+r.error,'err');}
-async function rejectGroup(chatId){if(!confirm('Reject?'))return;const r=await api('reject_group',{chatId});if(r.ok){toast('✅ Rejected','ok');setTimeout(()=>location.reload(),800);}else toast('❌ '+r.error,'err');}
-async function revokeGroup(chatId){if(!confirm('Cancel it?'))return;const r=await api('revoke_group',{chatId});if(r.ok){toast('✅ Cancelled','ok');setTimeout(()=>location.reload(),800);}else toast('❌ '+r.error,'err');}
-async function resetGroup(chatId){const r=await api('reset_group_remaining',{chatId});if(r.ok){toast('🔄 Reset','ok');setTimeout(()=>location.reload(),800);}else toast('❌ '+r.error,'err');}
+async function approveGroup(chatId,name,uid){if(!confirm('Confirm?'))return;const r=await api('approve_group',{chatId,groupName:name,userId:uid});if(r.ok){toast('✅ Approved','ok');setTimeout(reloadHere,800);}else toast('❌ '+r.error,'err');}
+async function rejectGroup(chatId){if(!confirm('Reject?'))return;const r=await api('reject_group',{chatId});if(r.ok){toast('✅ Rejected','ok');setTimeout(reloadHere,800);}else toast('❌ '+r.error,'err');}
+async function revokeGroup(chatId){if(!confirm('Cancel it?'))return;const r=await api('revoke_group',{chatId});if(r.ok){toast('✅ Cancelled','ok');setTimeout(reloadHere,800);}else toast('❌ '+r.error,'err');}
+async function resetGroup(chatId){const r=await api('reset_group_remaining',{chatId});if(r.ok){toast('🔄 Reset','ok');setTimeout(reloadHere,800);}else toast('❌ '+r.error,'err');}
 function showGroupProfile(chatId){const g=GROUPS.find(x=>x.chat_id==chatId);if(g)editGroup(chatId);}
 const MINI_KEYS=${JSON.stringify(MINI_APP_FEATURES.map(f=>f.key))};
 function ddEnhance(sel){
@@ -8775,7 +8798,7 @@ async function saveConfig(sec){
     replyLang:document.getElementById('cf-replyLang').value,
   };
   const r=await api('save_global_config',{section:sec,...b});
-  if(r.ok){toast('✅ Saved','ok');if(sec==='password'||sec==='primaryToken')setTimeout(()=>location.reload(),1200);}else toast('❌ '+r.error,'err');
+  if(r.ok){toast('✅ Saved','ok');if(sec==='password'||sec==='primaryToken')setTimeout(reloadHere,1200);}else toast('❌ '+r.error,'err');
 }
 
 // ─── helpers ────────────────────────────────────────────────────
@@ -9100,7 +9123,7 @@ async function runSetup(){
   if(r.passwordSet)L.push(fa?'🔒 رمز پنل تنظیم شد؛ دوباره وارد شو':'🔒 Panel password set — you will need to log in again');
   out.textContent=L.join('\\n');
   try{localStorage.removeItem('nikiSetupLater');}catch(e){}
-  setTimeout(()=>location.reload(),r.passwordSet?1800:2200);
+  setTimeout(reloadHere,r.passwordSet?1800:2200);
 }
 
 // ─── clear history (all sections) ───────────────────────────────
